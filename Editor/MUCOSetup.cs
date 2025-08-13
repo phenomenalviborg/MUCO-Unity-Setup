@@ -9,11 +9,55 @@ using Unity.VisualScripting;
 using UnityEngine.XR.Management;
 using System.Collections;
 using UnityEditor.XR.Management;
+using System;
 
 namespace Muco
 {
     public class MUCOSetup : EditorWindow
     {
+        public class GUILayoutHelper : IDisposable
+        {
+            public enum Orientation
+            {
+                Horizontal,
+                Vertical
+            }
+
+            Orientation currentOrientation;
+            
+            public GUILayoutHelper(Orientation orientation)
+            {
+                switch (orientation)
+                {
+                    case Orientation.Horizontal:
+                        GUILayout.BeginHorizontal();
+                        break;
+                    case Orientation.Vertical:
+                        GUILayout.BeginVertical();
+                        break;
+                }
+
+                this.currentOrientation = orientation;
+            }
+
+            public void Dispose()
+            {
+                switch (currentOrientation)
+                {
+                    case Orientation.Horizontal:
+                        GUILayout.EndHorizontal();
+                        break;
+                    case Orientation.Vertical:
+                        GUILayout.EndVertical();
+                        break;
+                }
+            }
+        }
+
+        GUILayoutHelper Horizontal => new GUILayoutHelper(GUILayoutHelper.Orientation.Horizontal);
+
+        GUILayoutHelper Vertical => new GUILayoutHelper(GUILayoutHelper.Orientation.Vertical);
+
         [MenuItem("MUCO/Setup")]
         public static void ShowWindow()
         {
@@ -39,7 +83,6 @@ namespace Muco
         private void OnGUI()
         {
 
-
             GUILayout.Label("Recommended Project Settings", EditorStyles.boldLabel);
             GUILayout.Space(5);
 
@@ -57,113 +100,121 @@ namespace Muco
             // Required Packages section
             GUILayout.Label("Required Packages", EditorStyles.boldLabel);
             GUILayout.Space(5);
-
-            GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
-            foreach (KeyValuePair<string, string> kvp in packages)
+            using (Horizontal)
             {
-                GUILayout.Label(kvp.Key, labelStyleNextToButton, biggerLineHeight);
-            }
-            GUILayout.EndVertical();
-            GUILayout.BeginVertical();
-
-            foreach (KeyValuePair<string, string> kvp in packages)
-            {
-                if (IsPackageInstalled(kvp.Key))
+                using (Vertical)
                 {
-                    GUILayout.Label("OK", styleGreen);
-                }
-                else
-                {
-                    if (GUILayout.Button("Install Package"))
+                    foreach (KeyValuePair<string, string> kvp in packages)
                     {
-                        AddPackage(kvp.Key + "@" + kvp.Value);
+                        GUILayout.Label(kvp.Key, labelStyleNextToButton, biggerLineHeight);
+                    }
+                }
+                using (Vertical)
+                {
+                    foreach (KeyValuePair<string, string> kvp in packages)
+                    {
+                        if (IsPackageInstalled(kvp.Key))
+                        {
+                            GUILayout.Label("OK", styleGreen);
+                        }
+                        else
+                        {
+                            if (GUILayout.Button("Install Package"))
+                            {
+                                AddPackage(kvp.Key + "@" + kvp.Value);
+                            }
+                        }
+                    }
+                    if (!AreAllPAckagesInstalled(packages))
+                    {
+                        if (GUILayout.Button("Install All Packages"))
+                        {
+                            AddPackages(packages);
+                        }
                     }
                 }
             }
+                
 
-            if (!AreAllPAckagesInstalled(packages))
-            {
-                if (GUILayout.Button("Install All Packages"))
-                {
-                    AddPackages(packages);
-                }
-            }
-
-            GUILayout.EndVertical();
-            GUILayout.EndHorizontal();
-
+            
             GUILayout.Space(20);
 
             GUILayout.Label("Recommended Build Settings", EditorStyles.boldLabel);
             GUILayout.Space(5);
-            GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
-            GUILayout.Label("Build Target: " + EditorUserBuildSettings.activeBuildTarget, labelStyleNextToButton, biggerLineHeight);
-            GUILayout.EndVertical();
-            GUILayout.BeginVertical();
-            if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
+            using (new GUILayoutHelper(GUILayoutHelper.Orientation.Horizontal))
             {
-                GUILayout.Label("OK", styleGreen);
-            }
-            else
-            {
-                if (GUILayout.Button("Set Build Target to Android"))
+                using (new GUILayoutHelper(GUILayoutHelper.Orientation.Vertical))
                 {
-                    EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
-                }
-            }
-            GUILayout.EndVertical();
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
-
-            if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
-            {
-                string compression = EditorUserBuildSettings.androidBuildSubtarget.ToString();
-                GUILayout.Label("Texture Compression Format: " + compression, labelStyleNextToButton, biggerLineHeight);
-            }
-            else
-            {
-                GUILayout.Label("Texture Compression Format: Android Only", styleRed, biggerLineHeight);
-            }
-            GUILayout.EndVertical();
-            GUILayout.BeginVertical();
-
-            if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
-            {
-                if (EditorUserBuildSettings.androidBuildSubtarget == MobileTextureSubtarget.ASTC)
-                {
-                    GUILayout.Label("OK", styleGreen);
-                }
-                else
-                {
-                    if (GUILayout.Button("Set to ASTC"))
+                    GUILayout.Label("Build Target: " + EditorUserBuildSettings.activeBuildTarget, labelStyleNextToButton, biggerLineHeight);
+                    }
+                    using (Vertical)
                     {
-                        SetAndroidTextureCompressionToASTC();
+                    if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
+                    {
+                        GUILayout.Label("OK", styleGreen);
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("Set Build Target to Android"))
+                        {
+                            EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
+                        }
                     }
                 }
             }
-            else
-            {
-                GUI.enabled = false;
-                GUILayout.Button("Set to ASTC");
-                GUI.enabled = true;
+
+            using (Horizontal) {
+                using (Vertical)
+                {
+
+                if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
+                {
+                    string compression = EditorUserBuildSettings.androidBuildSubtarget.ToString();
+                    GUILayout.Label("Texture Compression Format: " + compression, labelStyleNextToButton, biggerLineHeight);
+                }
+                else
+                {
+                    GUILayout.Label("Texture Compression Format: Android Only", styleRed, biggerLineHeight);
+                }
+                }
+                using (Vertical)
+                {
+
+                if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
+                {
+                    if (EditorUserBuildSettings.androidBuildSubtarget == MobileTextureSubtarget.ASTC)
+                    {
+                        GUILayout.Label("OK", styleGreen);
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("Set to ASTC"))
+                        {
+                            SetAndroidTextureCompressionToASTC();
+                        }
+                    }
+                }
+                else
+                {
+                    GUI.enabled = false;
+                    GUILayout.Button("Set to ASTC");
+                    GUI.enabled = true;
+                }
+                }
             }
-            GUILayout.EndVertical();
-            GUILayout.EndHorizontal();
 
             GUILayout.Space(20);
 
             GUILayout.Label("Recommended Player Settings", EditorStyles.boldLabel);
 
             GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
+            using (Vertical)
+            {
             GUILayout.Label("Allow 'unsafe' Code: " + (PlayerSettings.allowUnsafeCode ? "Enabled" : "Disabled"));
             GUILayout.Label("Color Space: " + PlayerSettings.colorSpace);
-            GUILayout.EndVertical();
-            GUILayout.BeginVertical();
+            }
+            using (Vertical)
+            {
             if (PlayerSettings.allowUnsafeCode)
                 GUILayout.Label("OK", styleGreen);
             else
@@ -183,27 +234,29 @@ namespace Muco
                     PlayerSettings.colorSpace = ColorSpace.Linear;
                 }
             }
-            GUILayout.EndVertical();
+            }
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
-            GUILayout.Label("Android Minimum API Level: " + ((int)PlayerSettings.Android.minSdkVersion));
-            GUILayout.EndVertical();
-            GUILayout.BeginVertical();
-            if ((int)PlayerSettings.Android.minSdkVersion < (int)AndroidSdkVersions.AndroidApiLevel32)
-            {
-                if (GUILayout.Button("Set Android API Level to 32"))
+                using (Vertical)
                 {
-                    PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel32;
+                    GUILayout.Label("Android Minimum API Level: " + ((int)PlayerSettings.Android.minSdkVersion));
                 }
-            }
-            else
-            {
-                if (GUILayout.Button("OK", styleGreen))
+                using (Vertical)
                 {
+                    if ((int)PlayerSettings.Android.minSdkVersion < (int)AndroidSdkVersions.AndroidApiLevel32)
+                    {
+                        if (GUILayout.Button("Set Android API Level to 32"))
+                        {
+                            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel32;
+                        }
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("OK", styleGreen))
+                        {
+                        }
+                    }
                 }
-            }
-            GUILayout.EndVertical();
             GUILayout.EndHorizontal();
             GUILayout.Space(20);
 
@@ -212,63 +265,41 @@ namespace Muco
             GUILayout.Label("Project Settings - > XR Plug-in Management", EditorStyles.boldLabel);
             
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Target XR Plugin: ");
+                GUILayout.Label("Target XR Plugin: ");
             GUILayout.EndHorizontal();
+
             GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
-            foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
-            {
-                GUILayout.Label(loader.name);
-            }
-            GUILayout.EndVertical();
-            GUILayout.BeginVertical();
-            foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
-            {
-                if (loader.name == "OpenXRLoader")
+                using (Vertical)
                 {
-                    GUILayout.Label("OK", styleGreen);
-                }
-                else
-                {
-                    if (GUILayout.Button("Remove", styleRed))
+                    foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                     {
-                        xRGeneralSettings.Manager.TryRemoveLoader(loader);
+                        GUILayout.Label(loader.name);
                     }
                 }
-                
-            }
-            GUILayout.EndVertical();
+                using (Vertical)
+                {
+                    foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
+                    {
+                        if (loader.name == "OpenXRLoader")
+                        {
+                            GUILayout.Label("OK", styleGreen);
+                        }
+                        else
+                        {
+                            if (GUILayout.Button("Remove", styleRed))
+                            {
+                                xRGeneralSettings.Manager.TryRemoveLoader(loader);
+                            }
+                        }
+                        
+                    }
+                }
             GUILayout.EndHorizontal();
 
             GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem");
             GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering");
-            GUILayout.EndVertical();
-            GUILayout.BeginHorizontal();
-            
-            GUILayout.EndHorizontal();
-            GUILayout.BeginVertical();
-            // if (GUILayout.Button("Set Plug-in to OpenXR"))
-            // {
-            //     //PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel32;
-            // }
-            GUILayout.EndVertical();
             GUILayout.Label("XR Plug-in Management -> OpenXR", EditorStyles.boldLabel);
-            GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
-            GUILayout.EndVertical();
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
-            GUILayout.EndVertical();
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            GUILayout.BeginVertical();
-            GUILayout.EndVertical();
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            
-            GUILayout.EndHorizontal();
 
         }
 
@@ -280,7 +311,6 @@ namespace Muco
             buildTargetSettingsPerBuildTarget = null;
             EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out buildTargetSettingsPerBuildTarget);
             xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
-            Debug.Log(xRGeneralSettings);
             //foreach (XRLoader loader in settings.Manager.activeLoaders )
             // Debug.Log(settings.Manager.activeLoaders.ToSeparatedString(", "));
         }
