@@ -15,5 +15,6 @@
     "name": "Phenomenal Viborg",
     "email": "info@phenomenalviborg.com",
     "url": "https://www.phenomenalviborg.com/"
-  }
+  },
+  "license":"LGPL-3.0-or-later"
 }
