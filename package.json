@@ -1,0 +1,18 @@
+{
+  "name": "com.phenominalviborg.muco-setup",
+  "version": "0.0.1",
+  "displayName": "MUCO Setup",
+  "description": "MUCO Unity Setup",
+  "unity": "6000.0",
+  "dependencies": {
+  },
+  "keywords": [
+    "MUCO",
+    "VR"
+  ],
+  "author": {
+    "name": "Phenominal Viborg",
+    "email": "info@phenominalviborg.com",
+    "url": "https://www.phenomenalviborg.com/"
+  }
+}
