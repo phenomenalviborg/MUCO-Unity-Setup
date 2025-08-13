@@ -224,6 +224,9 @@ namespace Muco
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem");
             GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering");
             GUILayout.EndVertical();
+            GUILayout.BeginHorizontal();
+            
+            GUILayout.EndHorizontal();
             GUILayout.BeginVertical();
             // if (GUILayout.Button("Set Plug-in to OpenXR"))
             // {
