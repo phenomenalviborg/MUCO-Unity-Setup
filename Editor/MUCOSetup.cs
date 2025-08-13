@@ -134,9 +134,9 @@ namespace Muco
                     }
                 }
             }
-                
 
-            
+
+
             GUILayout.Space(20);
 
             GUILayout.Label("Recommended Build Settings", EditorStyles.boldLabel);
@@ -146,9 +146,9 @@ namespace Muco
                 using (new GUILayoutHelper(GUILayoutHelper.Orientation.Vertical))
                 {
                     GUILayout.Label("Build Target: " + EditorUserBuildSettings.activeBuildTarget, labelStyleNextToButton, biggerLineHeight);
-                    }
-                    using (Vertical)
-                    {
+                }
+                using (Vertical)
+                {
                     if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
                     {
                         GUILayout.Label("OK", styleGreen);
@@ -163,80 +163,82 @@ namespace Muco
                 }
             }
 
-            using (Horizontal) {
+            using (Horizontal)
+            {
                 using (Vertical)
                 {
 
-                if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
-                {
-                    string compression = EditorUserBuildSettings.androidBuildSubtarget.ToString();
-                    GUILayout.Label("Texture Compression Format: " + compression, labelStyleNextToButton, biggerLineHeight);
-                }
-                else
-                {
-                    GUILayout.Label("Texture Compression Format: Android Only", styleRed, biggerLineHeight);
-                }
-                }
-                using (Vertical)
-                {
-
-                if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
-                {
-                    if (EditorUserBuildSettings.androidBuildSubtarget == MobileTextureSubtarget.ASTC)
+                    if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
                     {
-                        GUILayout.Label("OK", styleGreen);
+                        string compression = EditorUserBuildSettings.androidBuildSubtarget.ToString();
+                        GUILayout.Label("Texture Compression Format: " + compression, labelStyleNextToButton, biggerLineHeight);
                     }
                     else
                     {
-                        if (GUILayout.Button("Set to ASTC"))
-                        {
-                            SetAndroidTextureCompressionToASTC();
-                        }
+                        GUILayout.Label("Texture Compression Format: Android Only", styleRed, biggerLineHeight);
                     }
                 }
-                else
+                using (Vertical)
                 {
-                    GUI.enabled = false;
-                    GUILayout.Button("Set to ASTC");
-                    GUI.enabled = true;
-                }
+
+                    if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
+                    {
+                        if (EditorUserBuildSettings.androidBuildSubtarget == MobileTextureSubtarget.ASTC)
+                        {
+                            GUILayout.Label("OK", styleGreen);
+                        }
+                        else
+                        {
+                            if (GUILayout.Button("Set to ASTC"))
+                            {
+                                SetAndroidTextureCompressionToASTC();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        GUI.enabled = false;
+                        GUILayout.Button("Set to ASTC");
+                        GUI.enabled = true;
+                    }
                 }
             }
 
             GUILayout.Space(20);
-
             GUILayout.Label("Recommended Player Settings", EditorStyles.boldLabel);
 
-            GUILayout.BeginHorizontal();
-            using (Vertical)
+            using (Horizontal)
             {
-            GUILayout.Label("Allow 'unsafe' Code: " + (PlayerSettings.allowUnsafeCode ? "Enabled" : "Disabled"));
-            GUILayout.Label("Color Space: " + PlayerSettings.colorSpace);
-            }
-            using (Vertical)
-            {
-            if (PlayerSettings.allowUnsafeCode)
-                GUILayout.Label("OK", styleGreen);
-            else
-            {
-                if (GUILayout.Button("Enable 'unsafe' Code"))
+                using (Vertical)
                 {
-                    PlayerSettings.allowUnsafeCode = true;
+                    GUILayout.Label("Allow 'unsafe' Code: " + (PlayerSettings.allowUnsafeCode ? "Enabled" : "Disabled"));
+                    GUILayout.Label("Color Space: " + PlayerSettings.colorSpace);
                 }
-            }
+                using (Vertical)
+                {
+                    if (PlayerSettings.allowUnsafeCode)
+                        GUILayout.Label("OK", styleGreen);
+                    else
+                    {
+                        if (GUILayout.Button("Enable 'unsafe' Code"))
+                        {
+                            PlayerSettings.allowUnsafeCode = true;
+                        }
+                    }
 
-            if (PlayerSettings.colorSpace == ColorSpace.Linear)
-                GUILayout.Label("OK", styleGreen);
-            else
-            {
-                if (GUILayout.Button("Set Color Space to Linear"))
-                {
-                    PlayerSettings.colorSpace = ColorSpace.Linear;
+                    if (PlayerSettings.colorSpace == ColorSpace.Linear)
+                        GUILayout.Label("OK", styleGreen);
+                    else
+                    {
+                        if (GUILayout.Button("Set Color Space to Linear"))
+                        {
+                            PlayerSettings.colorSpace = ColorSpace.Linear;
+                        }
+                    }
                 }
             }
-            }
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
+            using (Horizontal)
+            {
                 using (Vertical)
                 {
                     GUILayout.Label("Android Minimum API Level: " + ((int)PlayerSettings.Android.minSdkVersion));
@@ -257,22 +259,21 @@ namespace Muco
                         }
                     }
                 }
-            GUILayout.EndHorizontal();
+            }
             GUILayout.Space(20);
-
-
-
             GUILayout.Label("Project Settings - > XR Plug-in Management", EditorStyles.boldLabel);
-            
-            GUILayout.BeginHorizontal();
+            using (Horizontal)
+            {
                 GUILayout.Label("Target XR Plugin: ");
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
+            }
+            using (Horizontal)
+            {
+                GUILayout.Space(20);
                 using (Vertical)
                 {
                     foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                     {
+
                         GUILayout.Label(loader.name);
                     }
                 }
@@ -291,21 +292,19 @@ namespace Muco
                                 xRGeneralSettings.Manager.TryRemoveLoader(loader);
                             }
                         }
-                        
                     }
                 }
-            GUILayout.EndHorizontal();
-
+            }
             GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem");
             GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering");
             GUILayout.Label("XR Plug-in Management -> OpenXR", EditorStyles.boldLabel);
 
+            
         }
 
         XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
         XRGeneralSettings xRGeneralSettings;
-
         private void LoadXR()
         {
             buildTargetSettingsPerBuildTarget = null;
