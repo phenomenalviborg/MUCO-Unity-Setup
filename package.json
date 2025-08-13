@@ -1,11 +1,11 @@
 {
-  "name": "com.phenominalviborg.muco-setup",
+  "name": "com.phenomenalviborg.muco-setup",
   "version": "0.0.1",
   "displayName": "MUCO Setup",
   "description": "MUCO Unity Setup",
   "unity": "6000.0",
   "dependencies": {
-    "com.unity.xr.management":"4.5.1"
+    "com.unity.xr.management": "4.5.1"
   },
   "keywords": [
     "MUCO",

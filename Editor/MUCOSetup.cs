@@ -4,10 +4,7 @@ using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
 using System.IO;
 using System.Collections.Generic;
-using UnityEditor.XR.Management.Metadata;
-using Unity.VisualScripting;
 using UnityEngine.XR.Management;
-using System.Collections;
 using UnityEditor.XR.Management;
 using System;
 
@@ -141,9 +138,9 @@ namespace Muco
 
             GUILayout.Label("Recommended Build Settings", EditorStyles.boldLabel);
             GUILayout.Space(5);
-            using (new GUILayoutHelper(GUILayoutHelper.Orientation.Horizontal))
+            using (Horizontal)
             {
-                using (new GUILayoutHelper(GUILayoutHelper.Orientation.Vertical))
+                using (Vertical)
                 {
                     GUILayout.Label("Build Target: " + EditorUserBuildSettings.activeBuildTarget, labelStyleNextToButton, biggerLineHeight);
                 }
