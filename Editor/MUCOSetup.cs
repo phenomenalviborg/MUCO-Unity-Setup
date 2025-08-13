@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using UnityEngine.XR.Management;
 using UnityEditor.XR.Management;
 using System;
-
+using UnityEngine.XR;
 namespace Muco
 {
     public class MUCOSetup : EditorWindow
@@ -52,13 +52,15 @@ namespace Muco
         }
 
         GUILayoutHelper Horizontal => new GUILayoutHelper(GUILayoutHelper.Orientation.Horizontal);
-
         GUILayoutHelper Vertical => new GUILayoutHelper(GUILayoutHelper.Orientation.Vertical);
 
         [MenuItem("MUCO/Setup")]
         public static void ShowWindow()
         {
-            GetWindow<MUCOSetup>("MUCO Setup");
+            MUCOSetup mucoSetup = GetWindow<MUCOSetup>("MUCO Setup");
+            // mucoSetup.minSize = new Vector2(250, 250);
+            // mucoSetup.maxSize = new Vector2(500, 500);
+           
         }
 
         Dictionary<string, string> packages = new Dictionary<string, string>();
@@ -85,6 +87,7 @@ namespace Muco
             GUILayout.Space(5);
         }
 
+        Vector2 scrollPos = Vector2.zero;
         private void OnGUI()
         {
 
@@ -98,23 +101,24 @@ namespace Muco
             styleHeader.fontSize = 20;
             styleHeader.fontStyle = FontStyle.Bold;
             styleHeader.normal.textColor = Color.gray;
-            styleHeader.padding = new RectOffset(5, 5, 5, 5);
+            styleHeader.padding = new RectOffset(10, 5, 5, 5);
 
             GUIStyle styleSubHeader = new GUIStyle();
+            styleSubHeader.fontSize = 15;
+            styleSubHeader.fontStyle = FontStyle.Bold;
+            styleSubHeader.normal.textColor = Color.gray;
+            styleSubHeader.padding = new RectOffset(6, 0, 5, 0);
+
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
 
             var lineHeight = 19;
 
             var biggerLineHeight = new GUILayoutOption[] { GUILayout.Height(lineHeight) };
             var labelStyleNextToButton = new GUIStyle(GUI.skin.label);
             GUILayout.Space(5);
-
             GUILayout.Label("MUCO Unity Setup", styleHeader);
-            
-            GuiLine(    );
-
-            // Required Packages section
-            GUILayout.Label("Required Packages", EditorStyles.boldLabel);
-            GUILayout.Space(5);
+            GuiLine();
+            GUILayout.Label("Required Packages", styleSubHeader);
             using (Horizontal)
             {
                 using (Vertical)
@@ -151,16 +155,22 @@ namespace Muco
             }
 
             GUILayout.Label("TODO: Get MUCO Unity Package");
-
-            GuiLine(    );
-
-            GUILayout.Label("Build Settings", EditorStyles.boldLabel);
-            GUILayout.Space(5);
+            GUILayout.Space(20);
+            GUILayout.Label("Build Settings", styleSubHeader);
             using (Horizontal)
             {
                 using (Vertical)
                 {
                     GUILayout.Label("Build Target: " + EditorUserBuildSettings.activeBuildTarget, labelStyleNextToButton, biggerLineHeight);
+                    if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
+                    {
+                        string compression = EditorUserBuildSettings.androidBuildSubtarget.ToString();
+                        GUILayout.Label("Texture Compression Format: " + compression, labelStyleNextToButton, biggerLineHeight);
+                    }
+                    else
+                    {
+                        GUILayout.Label("Texture Compression Format: Android Only", styleRed, biggerLineHeight);
+                    }
                 }
                 using (Vertical)
                 {
@@ -175,27 +185,6 @@ namespace Muco
                             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
                         }
                     }
-                }
-            }
-
-            using (Horizontal)
-            {
-                using (Vertical)
-                {
-
-                    if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
-                    {
-                        string compression = EditorUserBuildSettings.androidBuildSubtarget.ToString();
-                        GUILayout.Label("Texture Compression Format: " + compression, labelStyleNextToButton, biggerLineHeight);
-                    }
-                    else
-                    {
-                        GUILayout.Label("Texture Compression Format: Android Only", styleRed, biggerLineHeight);
-                    }
-                }
-                using (Vertical)
-                {
-
                     if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
                     {
                         if (EditorUserBuildSettings.androidBuildSubtarget == MobileTextureSubtarget.ASTC)
@@ -218,16 +207,15 @@ namespace Muco
                     }
                 }
             }
-
             GUILayout.Space(20);
-            GUILayout.Label("Project Settings -> Player", EditorStyles.boldLabel);
-            GUILayout.Space(5);
+            GUILayout.Label("Project Settings - Player", styleSubHeader);
             using (Horizontal)
             {
                 using (Vertical)
                 {
                     GUILayout.Label("Allow 'unsafe' Code: " + (PlayerSettings.allowUnsafeCode ? "Enabled" : "Disabled"));
                     GUILayout.Label("Color Space: " + PlayerSettings.colorSpace);
+                    GUILayout.Label("Android Minimum API Level: " + ((int)PlayerSettings.Android.minSdkVersion));
                 }
                 using (Vertical)
                 {
@@ -250,21 +238,11 @@ namespace Muco
                             PlayerSettings.colorSpace = ColorSpace.Linear;
                         }
                     }
-                }
-            }
-            using (Horizontal)
-            {
-                using (Vertical)
-                {
-                    GUILayout.Label("Android Minimum API Level: " + ((int)PlayerSettings.Android.minSdkVersion));
-                }
-                using (Vertical)
-                {
-                    if ((int)PlayerSettings.Android.minSdkVersion < (int)AndroidSdkVersions.AndroidApiLevel32)
+                    if ((int)PlayerSettings.Android.minSdkVersion < (int)AndroidSdkVersions.AndroidApiLevel29)
                     {
-                        if (GUILayout.Button("Set Android API Level to 32"))
+                        if (GUILayout.Button("Set Android API Level to 29"))
                         {
-                            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel32;
+                            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
                         }
                     }
                     else
@@ -276,43 +254,50 @@ namespace Muco
                 }
             }
             GUILayout.Space(20);
-            GUILayout.Label("Project Settings - > XR Plug-in Management", EditorStyles.boldLabel);
-            GUILayout.Space(5);
+            GUILayout.Label("Project Settings - > XR Plug-in Management", styleSubHeader);
             using (Horizontal)
             {
-                GUILayout.Label("Target XR Plugin: ");
+                GUILayout.Label("Target XR Plugins: ");
             }
             using (Horizontal)
             {
                 using (Vertical)
                 {
-                    Debug.Log(xRGeneralSettings);
+
                     if (xRGeneralSettings != null)
+                    {
                         foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                         {
 
                             GUILayout.Label(loader.name);
                         }
+                    }
                 }
-            }
-            using (Vertical)
-            {
-                if (xRGeneralSettings)
-                    foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
-                    {
-                        if (loader.name == "OpenXRLoader")
+                using (Vertical)
+                {
+                    if (xRGeneralSettings)
+                        foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                         {
-                            GUILayout.Label("OK", styleGreen);
-                        }
-                        else
-                        {
-                            if (GUILayout.Button("Remove", styleRed))
+                            if (loader.name == "OpenXRLoader")
                             {
-                                xRGeneralSettings.Manager.TryRemoveLoader(loader);
+                                openXRLoader = loader;
+                                GUILayout.Label("OK", styleGreen);
+                            }
+                            else
+                            {
+                                if (GUILayout.Button("Remove", styleRed))
+                                {
+                                    xRGeneralSettings.Manager.TryRemoveLoader(loader);
+                                }
                             }
                         }
-                    }
+                }
             }
+            if (xRGeneralSettings != null && openXRLoader != null)
+            {
+                
+            }
+            
 
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem ON");
             GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering ON");
@@ -361,13 +346,8 @@ namespace Muco
                     GUILayout.Label("XR Plugin Management -> OpenXR -> Enabled Interaction Profiles -> ONLY PICO 4 Ultra Touch Controller Profile ON");
                     break;
             }
+            EditorGUILayout.EndScrollView();
         }
-
-
-
-        //string[] _options = new string[3] {"apple","banana","pear"};
-
-        //XRHeadsetType[] xRHeadsetTypes = {}
 
         XRHeadsetType selectedXRHeadsetType;
 
@@ -377,24 +357,21 @@ namespace Muco
             Pico4UltraEnterprise
         }
 
+        XRLoader openXRLoader = null;
+
         XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
         XRGeneralSettings xRGeneralSettings;
         private void LoadXR()
         {
+            xRGeneralSettings = XRGeneralSettings.CreateInstance<XRGeneralSettings>();
             if (xRGeneralSettings != null)
             {
                 buildTargetSettingsPerBuildTarget = null;
                 EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out buildTargetSettingsPerBuildTarget);
                 xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
+                
             }
-            //foreach (XRLoader loader in settings.Manager.activeLoaders )
-            // Debug.Log(settings.Manager.activeLoaders.ToSeparatedString(", "));
         }
-        static void CheckAssignedLoaders()
-        {
-
-        }
-
         public static bool IsPackageInstalled(string packageId)
         {
             if (!File.Exists("Packages/manifest.json"))
