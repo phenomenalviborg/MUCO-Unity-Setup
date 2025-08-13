@@ -210,16 +210,36 @@ namespace Muco
 
 
             GUILayout.Label("Project Settings - > XR Plug-in Management", EditorStyles.boldLabel);
-
+            
             GUILayout.BeginHorizontal();
             GUILayout.Label("Target XR Plugin: ");
             GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.BeginVertical();
             foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
             {
-                GUILayout.BeginHorizontal();
                 GUILayout.Label(loader.name);
-                GUILayout.EndHorizontal();
             }
+            GUILayout.EndVertical();
+            GUILayout.BeginVertical();
+            foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
+            {
+                if (loader.name == "OpenXRLoader")
+                {
+                    GUILayout.Label("OK", styleGreen);
+                }
+                else
+                {
+                    if (GUILayout.Button("Remove", styleRed))
+                    {
+                        xRGeneralSettings.Manager.TryRemoveLoader(loader);
+                    }
+                }
+                
+            }
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
+
             GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem");
             GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering");
