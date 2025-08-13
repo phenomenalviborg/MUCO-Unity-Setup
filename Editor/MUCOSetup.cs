@@ -76,12 +76,17 @@ namespace Muco
             LoadXR();
         }
 
+        void GuiLine(int i_height = 1)
+        {
+            GUILayout.Space(5);
+            Rect rect = EditorGUILayout.GetControlRect(false, i_height);
+            rect.height = i_height;
+            EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 1));
+            GUILayout.Space(5);
+        }
 
         private void OnGUI()
         {
-
-            GUILayout.Label("MUCO Unity Setup Helper", EditorStyles.largeLabel);
-            GUILayout.Space(5);
 
             GUIStyle styleRed = new GUIStyle(GUI.skin.button);
             styleRed.normal.textColor = Color.red;
@@ -89,10 +94,23 @@ namespace Muco
             GUIStyle styleGreen = new GUIStyle(GUI.skin.button);
             styleGreen.normal.textColor = Color.green;
 
+            GUIStyle styleHeader = new GUIStyle();
+            styleHeader.fontSize = 20;
+            styleHeader.fontStyle = FontStyle.Bold;
+            styleHeader.normal.textColor = Color.gray;
+            styleHeader.padding = new RectOffset(5, 5, 5, 5);
+
+            GUIStyle styleSubHeader = new GUIStyle();
+
             var lineHeight = 19;
 
             var biggerLineHeight = new GUILayoutOption[] { GUILayout.Height(lineHeight) };
             var labelStyleNextToButton = new GUIStyle(GUI.skin.label);
+            GUILayout.Space(5);
+
+            GUILayout.Label("MUCO Unity Setup", styleHeader);
+            
+            GuiLine(    );
 
             // Required Packages section
             GUILayout.Label("Required Packages", EditorStyles.boldLabel);
@@ -134,9 +152,7 @@ namespace Muco
 
             GUILayout.Label("TODO: Get MUCO Unity Package");
 
-
-
-            GUILayout.Space(20);
+            GuiLine(    );
 
             GUILayout.Label("Build Settings", EditorStyles.boldLabel);
             GUILayout.Space(5);
@@ -268,10 +284,10 @@ namespace Muco
             }
             using (Horizontal)
             {
-                GUILayout.Space(20);
                 using (Vertical)
                 {
-                    if (xRGeneralSettings)
+                    Debug.Log(xRGeneralSettings);
+                    if (xRGeneralSettings != null)
                         foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                         {
 
@@ -316,10 +332,10 @@ namespace Muco
                 case XRHeadsetType.MetaQuest2:
                     GUILayout.Label("XR Plugin Management -> OpenXR -> Meta Quest Support ON");
                     GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
-                    break; 
+                    break;
                 case XRHeadsetType.Pico4UltraEnterprise:
                     using (Horizontal)
-                    { 
+                    {
                         using (Vertical)
                         {
                             GUILayout.Label("Install PicoXR package");
@@ -343,7 +359,7 @@ namespace Muco
                     GUILayout.Label("XR Plugin Management -> OpenXR -> Pico Support ON");
                     GUILayout.Label("XR Plugin Management -> OpenXR -> Meta Quest Support OFF");
                     GUILayout.Label("XR Plugin Management -> OpenXR -> Enabled Interaction Profiles -> ONLY PICO 4 Ultra Touch Controller Profile ON");
-                    break; 
+                    break;
             }
         }
 
