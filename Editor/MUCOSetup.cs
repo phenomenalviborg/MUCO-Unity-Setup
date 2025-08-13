@@ -268,14 +268,17 @@ namespace Muco
                 GUILayout.Space(20);
                 using (Vertical)
                 {
-                    foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
-                    {
+                    if (xRGeneralSettings)
+                        foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
+                        {
 
-                        GUILayout.Label(loader.name);
+                            GUILayout.Label(loader.name);
+                        }
                     }
                 }
-                using (Vertical)
-                {
+            using (Vertical)
+            {
+                if (xRGeneralSettings)
                     foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                     {
                         if (loader.name == "OpenXRLoader")
@@ -290,8 +293,8 @@ namespace Muco
                             }
                         }
                     }
-                }
             }
+            
             GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem");
             GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering");
