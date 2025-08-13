@@ -132,6 +132,8 @@ namespace Muco
                 }
             }
 
+            GUILayout.Label("TODO: Get MUCO Unity Package");
+
 
 
             GUILayout.Space(20);
@@ -274,8 +276,8 @@ namespace Muco
 
                             GUILayout.Label(loader.name);
                         }
-                    }
                 }
+            }
             using (Vertical)
             {
                 if (xRGeneralSettings)
@@ -294,13 +296,67 @@ namespace Muco
                         }
                     }
             }
-            
-            GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
-            GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem");
-            GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering");
-            GUILayout.Label("XR Plug-in Management -> OpenXR", EditorStyles.boldLabel);
 
-            
+            GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
+            GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem ON");
+            GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering ON");
+            GUILayout.Label("OpenXR -> Multipass ON (For Built-in pipeline)");
+            GUILayout.Space(20);
+            GUILayout.Label("Headset Build Check List", EditorStyles.boldLabel);
+            EditorGUI.BeginChangeCheck();
+            var options = Enum.GetNames(typeof(XRHeadsetType));
+            var _selected = EditorGUILayout.Popup("My dropdown", (int)selectedXRHeadsetType, options);
+            if (EditorGUI.EndChangeCheck())
+            {
+                selectedXRHeadsetType = (XRHeadsetType)_selected;
+            }
+            switch (selectedXRHeadsetType)
+            {
+                case XRHeadsetType.MetaQuest2:
+                    GUILayout.Label("XR Plugin Management -> OpenXR -> Meta Quest Support ON");
+                    break; 
+                case XRHeadsetType.Pico4UltraEnterprise:
+                    using (Horizontal)
+                    { 
+                        using (Vertical)
+                        {
+                            GUILayout.Label("Install PicoXR package");
+                        }
+                        using (Vertical)
+                        {
+                            if (IsPackageInstalled("com.unity.xr.openxr.picoxr"))
+                            {
+                                GUILayout.Label("OK", styleGreen);
+                            }
+                            else
+                            {
+                                if (GUILayout.Button("Install Package"))
+                                {
+                                    AddPackage("com.unity.xr.openxr.picoxr@https://github.com/Pico-Developer/PICO-Unity-OpenXR-SDK.git");
+                                }
+                            }
+                        }
+                    }
+                    GUILayout.Label("XR Plugin Management -> OpenXR -> Pico OpenXR Features ON");
+                    GUILayout.Label("XR Plugin Management -> OpenXR -> Pico Support ON");
+                    GUILayout.Label("XR Plugin Management -> OpenXR -> Meta Quest Support OFF");
+                    GUILayout.Label("XR Plugin Management -> OpenXR -> Enabled Interaction Profiles -> ONLY PICO 4 Ultra Touch Controller Profile ON");
+                    break; 
+            }
+        }
+
+
+
+        //string[] _options = new string[3] {"apple","banana","pear"};
+
+        //XRHeadsetType[] xRHeadsetTypes = {}
+
+        XRHeadsetType selectedXRHeadsetType;
+
+        enum XRHeadsetType
+        {
+            MetaQuest2,
+            Pico4UltraEnterprise
         }
 
         XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
