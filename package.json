@@ -5,6 +5,7 @@
   "description": "MUCO Unity Setup",
   "unity": "6000.0",
   "dependencies": {
+    "com.unity.xr.management":"4.5.1"
   },
   "keywords": [
     "MUCO",
