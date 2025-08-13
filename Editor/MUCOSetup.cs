@@ -80,7 +80,7 @@ namespace Muco
         private void OnGUI()
         {
 
-            GUILayout.Label("Recommended Project Settings", EditorStyles.boldLabel);
+            GUILayout.Label("MUCO Unity Setup Helper", EditorStyles.largeLabel);
             GUILayout.Space(5);
 
             GUIStyle styleRed = new GUIStyle(GUI.skin.button);
@@ -138,7 +138,7 @@ namespace Muco
 
             GUILayout.Space(20);
 
-            GUILayout.Label("Recommended Build Settings", EditorStyles.boldLabel);
+            GUILayout.Label("Build Settings", EditorStyles.boldLabel);
             GUILayout.Space(5);
             using (Horizontal)
             {
@@ -204,8 +204,8 @@ namespace Muco
             }
 
             GUILayout.Space(20);
-            GUILayout.Label("Recommended Player Settings", EditorStyles.boldLabel);
-
+            GUILayout.Label("Project Settings -> Player", EditorStyles.boldLabel);
+            GUILayout.Space(5);
             using (Horizontal)
             {
                 using (Vertical)
@@ -261,6 +261,7 @@ namespace Muco
             }
             GUILayout.Space(20);
             GUILayout.Label("Project Settings - > XR Plug-in Management", EditorStyles.boldLabel);
+            GUILayout.Space(5);
             using (Horizontal)
             {
                 GUILayout.Label("Target XR Plugin: ");
@@ -302,9 +303,10 @@ namespace Muco
             GUILayout.Label("OpenXR -> Multipass ON (For Built-in pipeline)");
             GUILayout.Space(20);
             GUILayout.Label("Headset Build Check List", EditorStyles.boldLabel);
+            GUILayout.Space(5);
             EditorGUI.BeginChangeCheck();
             var options = Enum.GetNames(typeof(XRHeadsetType));
-            var _selected = EditorGUILayout.Popup("My dropdown", (int)selectedXRHeadsetType, options);
+            var _selected = EditorGUILayout.Popup("Select Headset", (int)selectedXRHeadsetType, options);
             if (EditorGUI.EndChangeCheck())
             {
                 selectedXRHeadsetType = (XRHeadsetType)_selected;
