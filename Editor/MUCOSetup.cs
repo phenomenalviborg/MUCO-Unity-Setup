@@ -304,9 +304,12 @@ namespace Muco
         XRGeneralSettings xRGeneralSettings;
         private void LoadXR()
         {
-            buildTargetSettingsPerBuildTarget = null;
-            EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out buildTargetSettingsPerBuildTarget);
-            xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
+            if (xRGeneralSettings != null)
+            {
+                buildTargetSettingsPerBuildTarget = null;
+                EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out buildTargetSettingsPerBuildTarget);
+                xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
+            }
             //foreach (XRLoader loader in settings.Manager.activeLoaders )
             // Debug.Log(settings.Manager.activeLoaders.ToSeparatedString(", "));
         }
