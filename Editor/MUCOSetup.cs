@@ -297,7 +297,6 @@ namespace Muco
                     }
             }
 
-            GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem ON");
             GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering ON");
             GUILayout.Label("OpenXR -> Multipass ON (For Built-in pipeline)");
@@ -314,6 +313,7 @@ namespace Muco
             {
                 case XRHeadsetType.MetaQuest2:
                     GUILayout.Label("XR Plugin Management -> OpenXR -> Meta Quest Support ON");
+                    GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
                     break; 
                 case XRHeadsetType.Pico4UltraEnterprise:
                     using (Horizontal)
