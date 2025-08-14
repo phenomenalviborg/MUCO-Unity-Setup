@@ -158,6 +158,7 @@ namespace Muco
                         if (GUILayout.Button("Install All Packages"))
                         {
                             AddPackages(packages);
+                            Repaint();
                         }
                     }
                 }
