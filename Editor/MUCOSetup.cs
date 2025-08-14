@@ -61,15 +61,27 @@ namespace Muco
 
         Dictionary<string, string> packages = new Dictionary<string, string>();
 
-        void OnValidate()
-        {
+        bool isInitialized;
+        void Init() {
+            if (isInitialized)
+                return;
+
             packages.Add("com.antilatency.sdk", "https://github.com/AntilatencySDK/Release_4.5.0.git#subset-9981b5a2f659d60c5c83913dabf63caeec6c76a7");
             packages.Add("com.antilatency.alt-tracking-xr", "https://github.com/antilatency/Unity.AltTrackingXrPackage.git");
             LoadXR();
             logo = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Packages/com.phenomenalviborg.muco-setup/Editor/MUCO-LOGO.png"
             );
-            Debug.Log(logo);
+            isInitialized = true;
+        }
+
+        void Awake() {
+            Init();
+        }
+
+        void OnValidate() {
+            Init();
+            
         }
 
         Texture2D logo;
@@ -85,7 +97,7 @@ namespace Muco
         Vector2 scrollPos = Vector2.zero;
         private void OnGUI()
         {
-
+            Init();
             GUIStyle styleRed = new GUIStyle(GUI.skin.button);
             styleRed.normal.textColor = Color.red;
 
@@ -114,7 +126,7 @@ namespace Muco
             using (Horizontal)
             {
                 GUILayout.BeginVertical(GUILayout.ExpandWidth(false), GUILayout.MaxWidth(26));
-                GUILayout.Label(logo, GUILayout.Width(38), GUILayout.Height(38));
+                    GUILayout.Label(logo, GUILayout.Width(38), GUILayout.Height(38));
                 GUILayout.EndVertical();
                 using (Vertical)
                 {
@@ -166,7 +178,13 @@ namespace Muco
                 }
             }
 
-            GUILayout.Label("TODO: Get MUCO Unity Package");
+            GUILayout.Label("Download private MUCO Unity Package at:");
+            GUILayout.TextField("https://github.com/phenomenalviborg/MUCO-Unity");
+            GUILayout.Label("And unzip into packages folder");
+            if (IsPackageInstalled("com.phenomenalviborg.muco"))
+            {
+                GUILayout.Label("MUCO Unity Installed!", styleGreen);
+            }
             GUILayout.Space(20);
             GUILayout.Label("Build Settings", styleSubHeader);
             using (Horizontal)
