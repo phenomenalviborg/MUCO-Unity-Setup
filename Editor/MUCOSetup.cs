@@ -181,7 +181,7 @@ namespace Muco
             {
                 GUILayout.Label("MUCO Unity Installed!", styleGreen);
             } else {
-                GUILayout.Label("MUCO Unity Not Installed!", styleGreen);
+                GUILayout.Label("MUCO Unity Not Installed!", styleRed);
             }
             GUILayout.Space(20);
             GUILayout.Label("Build Settings", styleSubHeader);
