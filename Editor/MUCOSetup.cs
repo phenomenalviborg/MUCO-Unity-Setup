@@ -118,12 +118,19 @@ namespace Muco
             GUILayout.Space(5);
             using (Horizontal)
             {
-                GUILayout.BeginVertical( GUILayout.ExpandWidth(false),GUILayout.MaxWidth(26));
-                    GUILayout.Label(logo, GUILayout.Width(38), GUILayout.Height(38));
+                GUILayout.BeginVertical(GUILayout.ExpandWidth(false), GUILayout.MaxWidth(26));
+                GUILayout.Label(logo, GUILayout.Width(38), GUILayout.Height(38));
                 GUILayout.EndVertical();
                 using (Vertical)
                 {
                     GUILayout.Label("MUCO Unity Setup", styleHeader);
+                }
+                using (Vertical)
+                {
+                    if (GUILayout.Button("Refresh"))
+                    {
+                        Repaint();
+                    }
                 }
             }
             GuiLine();
