@@ -82,8 +82,7 @@ namespace Muco
 
         void OnValidate() {
             Init();
-            LoadXR();
-            
+            LoadXR();   
         }
 
         Texture2D logo;
@@ -174,13 +173,15 @@ namespace Muco
                     }
                 }
             }
-
+            GUILayout.Label("MUCO Package", styleSubHeader);
             GUILayout.Label("Download private MUCO Unity Package at:");
             GUILayout.TextField("https://github.com/phenomenalviborg/MUCO-Unity");
             GUILayout.Label("And unzip into packages folder");
-            if (IsPackageInstalled("com.phenomenalviborg.muco"))
+            if (IsPackageInstalled("\"com.phenomenalviborg.muco\""))
             {
                 GUILayout.Label("MUCO Unity Installed!", styleGreen);
+            } else {
+                GUILayout.Label("MUCO Unity Not Installed!", styleGreen);
             }
             GUILayout.Space(20);
             GUILayout.Label("Build Settings", styleSubHeader);
@@ -409,7 +410,7 @@ namespace Muco
         public static bool AreAllPAckagesInstalled(Dictionary<string, string> packages) {
             foreach (KeyValuePair<string, string> kvp in packages)
             {
-                if (!IsPackageInstalled(kvp.Key + "@" + kvp.Value))
+                if (!IsPackageInstalled("\""+kvp.Key + "\":\""+ + kvp.Value))
                 {
                     return false;
                 }
