@@ -225,21 +225,11 @@ namespace Muco
             {
                 using (Vertical)
                 {
-                    GUILayout.Label("Allow 'unsafe' Code: " + (PlayerSettings.allowUnsafeCode ? "Enabled" : "Disabled"));
                     GUILayout.Label("Color Space: " + PlayerSettings.colorSpace);
                     GUILayout.Label("Android Minimum API Level: " + ((int)PlayerSettings.Android.minSdkVersion));
                 }
                 using (Vertical)
                 {
-                    if (PlayerSettings.allowUnsafeCode)
-                        GUILayout.Label("OK", styleGreen);
-                    else
-                    {
-                        if (GUILayout.Button("Enable 'unsafe' Code"))
-                        {
-                            PlayerSettings.allowUnsafeCode = true;
-                        }
-                    }
 
                     if (PlayerSettings.colorSpace == ColorSpace.Linear)
                         GUILayout.Label("OK", styleGreen);
