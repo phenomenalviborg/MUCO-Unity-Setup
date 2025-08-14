@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using UnityEngine.XR.Management;
 using UnityEditor.XR.Management;
 using System;
-using UnityEngine.XR;
 namespace Muco
 {
     public class MUCOSetup : EditorWindow
@@ -58,9 +57,6 @@ namespace Muco
         public static void ShowWindow()
         {
             MUCOSetup mucoSetup = GetWindow<MUCOSetup>("MUCO Setup");
-            // mucoSetup.minSize = new Vector2(250, 250);
-            // mucoSetup.maxSize = new Vector2(500, 500);
-           
         }
 
         Dictionary<string, string> packages = new Dictionary<string, string>();
@@ -76,8 +72,13 @@ namespace Muco
             packages.Add("com.antilatency.sdk", "https://github.com/AntilatencySDK/Release_4.5.0.git#subset-9981b5a2f659d60c5c83913dabf63caeec6c76a7");
             packages.Add("com.antilatency.alt-tracking-xr", "https://github.com/antilatency/Unity.AltTrackingXrPackage.git");
             LoadXR();
+            logo = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Packages/com.phenomenalviborg.muco-setup/Editor/MUCO-LOGO.png"
+            );
+            Debug.Log(logo);
         }
 
+        Texture2D logo;
         void GuiLine(int i_height = 1)
         {
             GUILayout.Space(5);
@@ -100,8 +101,8 @@ namespace Muco
             GUIStyle styleHeader = new GUIStyle();
             styleHeader.fontSize = 20;
             styleHeader.fontStyle = FontStyle.Bold;
-            styleHeader.normal.textColor = Color.gray;
-            styleHeader.padding = new RectOffset(10, 5, 5, 5);
+            styleHeader.normal.textColor = Color.white;
+            styleHeader.padding = new RectOffset(0, 5, 7, 5);
 
             GUIStyle styleSubHeader = new GUIStyle();
             styleSubHeader.fontSize = 15;
@@ -116,7 +117,16 @@ namespace Muco
             var biggerLineHeight = new GUILayoutOption[] { GUILayout.Height(lineHeight) };
             var labelStyleNextToButton = new GUIStyle(GUI.skin.label);
             GUILayout.Space(5);
-            GUILayout.Label("MUCO Unity Setup", styleHeader);
+            using (Horizontal)
+            {
+                GUILayout.BeginVertical( GUILayout.ExpandWidth(false),GUILayout.MaxWidth(26));
+                    GUILayout.Label(logo, GUILayout.Width(38), GUILayout.Height(38));
+                GUILayout.EndVertical();
+                using (Vertical)
+                {
+                    GUILayout.Label("MUCO Unity Setup", styleHeader);
+                }
+            }
             GuiLine();
             GUILayout.Label("Required Packages", styleSubHeader);
             using (Horizontal)
@@ -238,11 +248,11 @@ namespace Muco
                             PlayerSettings.colorSpace = ColorSpace.Linear;
                         }
                     }
-                    if ((int)PlayerSettings.Android.minSdkVersion < (int)AndroidSdkVersions.AndroidApiLevel29)
+                    if ((int)PlayerSettings.Android.minSdkVersion < (int)AndroidSdkVersions.AndroidApiLevel32)
                     {
-                        if (GUILayout.Button("Set Android API Level to 29"))
+                        if (GUILayout.Button("Set Android API Level to 32"))
                         {
-                            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
+                            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel32;
                         }
                     }
                     else
