@@ -395,7 +395,7 @@ namespace Muco
             if (!File.Exists("Packages/manifest.json"))
                 return false;
             string jsonText = File.ReadAllText("Packages/manifest.json");
-            return jsonText.Contains(packageId);
+            return jsonText.Contains("\""+packageId+"\"");
         }
 
         public static bool AreAllPAckagesInstalled(Dictionary<string, string> packages) {
@@ -413,7 +413,7 @@ namespace Muco
             {
                 foreach (KeyValuePair<string, string> kvp in packages)
                 {
-                    if (!IsPackageInstalled(kvp.Key + "@" + kvp.Value))
+                    if (!IsPackageInstalled(kvp.Key))
                         AddPackage(kvp.Key + "@" + kvp.Value);
                 }
             }
