@@ -65,7 +65,6 @@ namespace Muco
         void Init() {
             if (isInitialized)
                 return;
-
             packages.Add("com.antilatency.sdk", "https://github.com/AntilatencySDK/Release_4.5.0.git#subset-9981b5a2f659d60c5c83913dabf63caeec6c76a7");
             packages.Add("com.antilatency.alt-tracking-xr", "https://github.com/antilatency/Unity.AltTrackingXrPackage.git");
             packages.Add("com.phenomenalviborg.muco","https://github.com/phenomenalviborg/MUCO-Unity.git");
@@ -102,6 +101,7 @@ namespace Muco
         {
             Init();
             LoadXR();
+
             GUIStyle styleRed = new GUIStyle(GUI.skin.button);
             styleRed.normal.textColor = Color.red;
 
@@ -126,6 +126,7 @@ namespace Muco
 
             var biggerLineHeight = new GUILayoutOption[] { GUILayout.Height(lineHeight) };
             var labelStyleNextToButton = new GUIStyle(GUI.skin.label);
+
             GUILayout.Space(5);
             using (Horizontal)
             {
@@ -264,16 +265,15 @@ namespace Muco
             }
             GUILayout.Space(20);
             GUILayout.Label("Project Settings - > XR Plug-in Management", styleSubHeader);
-            using (Horizontal)
+            if (xRGeneralSettings != null && xRGeneralSettings.Manager)
             {
-                GUILayout.Label("Target XR Plugins: ");
-            }
-            using (Horizontal)
-            {
-                using (Vertical)
+                using (Horizontal)
                 {
-
-                    if (xRGeneralSettings != null)
+                    GUILayout.Label("Target XR Plugins: ");
+                }
+                using (Horizontal)
+                {
+                    using (Vertical)
                     {
                         foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                         {
@@ -284,28 +284,25 @@ namespace Muco
                 }
                 using (Vertical)
                 {
-                    if (xRGeneralSettings)
-                        foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
+                    foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
+                    {
+                        if (loader.name == "OpenXRLoader")
                         {
-                            if (loader.name == "OpenXRLoader")
+                            openXRLoader = loader;
+                            GUILayout.Label("OK", styleGreen);
+                        }
+                        else
+                        {
+                            if (GUILayout.Button("Remove", styleRed))
                             {
-                                openXRLoader = loader;
-                                GUILayout.Label("OK", styleGreen);
-                            }
-                            else
-                            {
-                                if (GUILayout.Button("Remove", styleRed))
-                                {
-                                    xRGeneralSettings.Manager.TryRemoveLoader(loader);
-                                }
+                                xRGeneralSettings.Manager.TryRemoveLoader(loader);
                             }
                         }
+                    }
                 }
             }
-            if (xRGeneralSettings != null && openXRLoader != null)
-            {
-
-            }
+        
+            
 
 
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem ON");
