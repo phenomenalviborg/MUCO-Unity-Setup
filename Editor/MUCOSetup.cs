@@ -68,7 +68,7 @@ namespace Muco
 
             packages.Add("com.antilatency.sdk", "https://github.com/AntilatencySDK/Release_4.5.0.git#subset-9981b5a2f659d60c5c83913dabf63caeec6c76a7");
             packages.Add("com.antilatency.alt-tracking-xr", "https://github.com/antilatency/Unity.AltTrackingXrPackage.git");
-            LoadXR();
+            
             logo = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Packages/com.phenomenalviborg.muco-setup/Editor/MUCO-LOGO.png"
             );
@@ -77,10 +77,12 @@ namespace Muco
 
         void Awake() {
             Init();
+            LoadXR();
         }
 
         void OnValidate() {
             Init();
+            LoadXR();
             
         }
 
@@ -95,9 +97,11 @@ namespace Muco
         }
 
         Vector2 scrollPos = Vector2.zero;
+    
         private void OnGUI()
         {
             Init();
+            LoadXR();
             GUIStyle styleRed = new GUIStyle(GUI.skin.button);
             styleRed.normal.textColor = Color.red;
 
@@ -126,22 +130,15 @@ namespace Muco
             using (Horizontal)
             {
                 GUILayout.BeginVertical(GUILayout.ExpandWidth(false), GUILayout.MaxWidth(26));
-                    GUILayout.Label(logo, GUILayout.Width(38), GUILayout.Height(38));
+                GUILayout.Label(logo, GUILayout.Width(38), GUILayout.Height(38));
                 GUILayout.EndVertical();
                 using (Vertical)
                 {
                     GUILayout.Label("MUCO Unity Setup", styleHeader);
                 }
-                using (Vertical)
-                {
-                    if (GUILayout.Button("Refresh"))
-                    {
-                        Repaint();
-                    }
-                }
             }
             GuiLine();
-            GUILayout.Label("Required Packages", styleSubHeader);
+            GUILayout.Label("Required External Packages", styleSubHeader);
             using (Horizontal)
             {
                 using (Vertical)
@@ -315,9 +312,9 @@ namespace Muco
             }
             if (xRGeneralSettings != null && openXRLoader != null)
             {
-                
+
             }
-            
+
 
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem ON");
             GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering ON");
@@ -381,16 +378,25 @@ namespace Muco
 
         XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
         XRGeneralSettings xRGeneralSettings;
+        
+        bool xrLoaded = false;
         private void LoadXR()
         {
+            if (xrLoaded)
+                return;
             xRGeneralSettings = XRGeneralSettings.CreateInstance<XRGeneralSettings>();
+
             if (xRGeneralSettings != null)
             {
                 buildTargetSettingsPerBuildTarget = null;
                 EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out buildTargetSettingsPerBuildTarget);
+                if (buildTargetSettingsPerBuildTarget == null)
+                    return;
                 xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
-                
+                if (xRGeneralSettings == null)
+                    return;
             }
+            xrLoaded = true;
         }
         public static bool IsPackageInstalled(string packageId)
         {
