@@ -6,6 +6,7 @@ using System.IO;
 using System.Collections.Generic;
 using UnityEngine.XR.Management;
 using UnityEditor.XR.Management;
+using UnityEditor.XR.OpenXR;
 using System;
 namespace Muco
 {
@@ -263,52 +264,74 @@ namespace Muco
                 }
             }
             GUILayout.Space(20);
-            GUILayout.Label("Project Settings - > XR Plug-in Management", styleSubHeader);
-            if (xRGeneralSettings != null && xRGeneralSettings.Manager)
+            GUILayout.Label("Project Settings - > Android -> XR Plug-in Management", styleSubHeader);
+            bool openXRLoaderFound = false;
+            if (xRGeneralSettings != null && xRGeneralSettings.Manager != null)
             {
+                GUILayout.Label("Target XR Plugins: ");
                 using (Horizontal)
                 {
-                    GUILayout.Label("Target XR Plugins: ");
-                }
-                using (Horizontal)
-                {
-                    using (Vertical)
-                    {
-                        foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
-                        {
-
-                            GUILayout.Label(loader.name);
-                        }
-                    }
-                }
-                using (Vertical)
-                {
+                    
                     foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                     {
-                        if (loader.name == "OpenXRLoader")
+                        using (Vertical)
                         {
-                            openXRLoader = loader;
-                            GUILayout.Label("OK", styleGreen);
-                        }
-                        else
-                        {
-                            if (GUILayout.Button("Remove", styleRed))
                             {
-                                xRGeneralSettings.Manager.TryRemoveLoader(loader);
+                                GUILayout.Label(loader.name);
+                            }
+                        }
+                        using (Vertical)
+                        {
+                            if (loader.name == "OpenXRLoader")
+                            {
+                                openXRLoaderFound = true;
+                                GUILayout.Label("OK", styleGreen);
+                            }
+                            else
+                            {
+                                if (GUILayout.Button("Remove", styleRed))
+                                {
+                                    xRGeneralSettings.Manager.TryRemoveLoader(loader);
+                                }
+                            }
+                        }
+                    }
+                    if (!openXRLoaderFound)
+                    {
+                        using (Vertical)
+                        {
+                            {
+                                GUILayout.Label("OpenXRLoader (missing)");
+                            }
+                        }
+                        using (Vertical)
+                        { 
+                            if (GUILayout.Button("Use OpenXRLoader", styleRed))
+                            {
+                                var XRLoader = new  OpenXRLoader() as XRLoader;
+                                xRGeneralSettings.Manager.TryAddLoader(XRLoader);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        using (Vertical)
+                        {
+                            {
+                                GUILayout.Label("OpenXRLoader (not missing)");
+                                
                             }
                         }
                     }
                 }
             }
-        
-            
 
 
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem ON");
             GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering ON");
             GUILayout.Label("OpenXR -> Multipass ON (For Built-in pipeline)");
             GUILayout.Space(20);
-            GUILayout.Label("Headset Build Check List", EditorStyles.boldLabel);
+            GUILayout.Label("Headset Build Check List", styleSubHeader);
             GUILayout.Space(5);
             EditorGUI.BeginChangeCheck();
             var options = Enum.GetNames(typeof(XRHeadsetType));
@@ -361,8 +384,6 @@ namespace Muco
             MetaQuest2,
             Pico4UltraEnterprise
         }
-
-        XRLoader openXRLoader = null;
 
         XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
         XRGeneralSettings xRGeneralSettings;
