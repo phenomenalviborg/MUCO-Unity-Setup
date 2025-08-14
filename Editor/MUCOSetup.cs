@@ -68,6 +68,7 @@ namespace Muco
 
             packages.Add("com.antilatency.sdk", "https://github.com/AntilatencySDK/Release_4.5.0.git#subset-9981b5a2f659d60c5c83913dabf63caeec6c76a7");
             packages.Add("com.antilatency.alt-tracking-xr", "https://github.com/antilatency/Unity.AltTrackingXrPackage.git");
+            packages.Add("com.phenomenalviborg.muco","https://github.com/phenomenalviborg/MUCO-Unity.git");
             
             logo = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Packages/com.phenomenalviborg.muco-setup/Editor/MUCO-LOGO.png"
@@ -172,16 +173,6 @@ namespace Muco
                         }
                     }
                 }
-            }
-            GUILayout.Label("MUCO Package", styleSubHeader);
-            GUILayout.Label("Download private MUCO Unity Package at:");
-            GUILayout.TextField("https://github.com/phenomenalviborg/MUCO-Unity");
-            GUILayout.Label("And unzip into packages folder");
-            if (IsPackageInstalled("\"com.phenomenalviborg.muco\""))
-            {
-                GUILayout.Label("MUCO Unity Installed!", styleGreen);
-            } else {
-                GUILayout.Label("MUCO Unity Not Installed!", styleRed);
             }
             GUILayout.Space(20);
             GUILayout.Label("Build Settings", styleSubHeader);
