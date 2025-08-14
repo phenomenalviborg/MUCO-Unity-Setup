@@ -59,16 +59,17 @@ namespace Muco
             MUCOSetup mucoSetup = GetWindow<MUCOSetup>("MUCO Setup");
         }
 
-        Dictionary<string, string> packages = new Dictionary<string, string>();
+        Dictionary<string, string> packages = new Dictionary<string, string> {
+            { "com.antilatency.sdk", "https://github.com/AntilatencySDK/Release_4.5.0.git#subset-9981b5a2f659d60c5c83913dabf63caeec6c76a7" },
+            { "com.antilatency.alt-tracking-xr", "https://github.com/antilatency/Unity.AltTrackingXrPackage.git" },
+            { "com.phenomenalviborg.muco","https://github.com/phenomenalviborg/MUCO-Unity.git" }
+        };
 
         bool isInitialized;
         void Init() {
             if (isInitialized)
                 return;
-            packages.Add("com.antilatency.sdk", "https://github.com/AntilatencySDK/Release_4.5.0.git#subset-9981b5a2f659d60c5c83913dabf63caeec6c76a7");
-            packages.Add("com.antilatency.alt-tracking-xr", "https://github.com/antilatency/Unity.AltTrackingXrPackage.git");
-            packages.Add("com.phenomenalviborg.muco","https://github.com/phenomenalviborg/MUCO-Unity.git");
-            
+
             logo = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Packages/com.phenomenalviborg.muco-setup/Editor/MUCO-LOGO.png"
             );
@@ -88,11 +89,9 @@ namespace Muco
         Texture2D logo;
         void GuiLine(int i_height = 1)
         {
-            GUILayout.Space(5);
             Rect rect = EditorGUILayout.GetControlRect(false, i_height);
             rect.height = i_height;
             EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 1));
-            GUILayout.Space(5);
         }
 
         Vector2 scrollPos = Vector2.zero;
@@ -118,9 +117,7 @@ namespace Muco
             styleSubHeader.fontSize = 15;
             styleSubHeader.fontStyle = FontStyle.Bold;
             styleSubHeader.normal.textColor = Color.gray;
-            styleSubHeader.padding = new RectOffset(6, 0, 5, 0);
-
-            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
+            styleSubHeader.padding = new RectOffset(6, 0, 0, 0);
 
             var lineHeight = 19;
 
@@ -139,6 +136,8 @@ namespace Muco
                 }
             }
             GuiLine();
+            scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
+            GUILayout.Space(5);
             GUILayout.Label("Required External Packages", styleSubHeader);
             using (Horizontal)
             {
