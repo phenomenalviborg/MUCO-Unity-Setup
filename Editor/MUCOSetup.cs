@@ -410,7 +410,7 @@ namespace Muco
         public static bool AreAllPAckagesInstalled(Dictionary<string, string> packages) {
             foreach (KeyValuePair<string, string> kvp in packages)
             {
-                if (!IsPackageInstalled("\""+kvp.Key + "\":\""+ kvp.Value))
+                if (!IsPackageInstalled(kvp.Key))
                 {
                     return false;
                 }
