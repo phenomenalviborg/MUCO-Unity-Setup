@@ -10,6 +10,8 @@ using UnityEditor.XR.Management.Metadata;
 using System;
 using System.Reflection;
 using System.Linq;
+using UnityEngine.XR.OpenXR;
+using UnityEngine.XR.OpenXR.Features;
 
 namespace Muco
 {
@@ -140,6 +142,10 @@ namespace Muco
             styleBold.padding = new RectOffset(6, 0, 0, 0);
             styleBold.normal.textColor = EditorStyles.label.normal.textColor;
 
+            GUIStyle styleList = new GUIStyle();
+            styleList.normal.textColor = EditorStyles.label.normal.textColor;
+            styleList.padding = new RectOffset(6, 3, 3, 3);
+
             var lineHeight = 19;
 
             var biggerLineHeight = new GUILayoutOption[] { GUILayout.Height(lineHeight) };
@@ -172,14 +178,14 @@ namespace Muco
                 GUILayout.FlexibleSpace();
                 using (Vertical)
                 {
-                   
+
                     foreach (KeyValuePair<string, string> kvp in packages)
                     {
                         if (EditorGUILayout.LinkButton("Link"))
                         {
                             Application.OpenURL(kvp.Value);
                         }
-                    } 
+                    }
                 }
                 using (Vertical)
                 {
@@ -228,7 +234,7 @@ namespace Muco
                         GUILayout.Label("Texture Compression Format: Android Only", styleLabelRed, biggerLineHeight);
                     }
                 }
-                GUILayout.FlexibleSpace(); 
+                GUILayout.FlexibleSpace();
                 using (Vertical)
                 {
                     if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
@@ -237,7 +243,7 @@ namespace Muco
                     }
                     else
                     {
-                        if (GUILayout.Button("Set Build Target to Android",styleButtonNormal))
+                        if (GUILayout.Button("Set Build Target to Android", styleButtonNormal))
                         {
                             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
                         }
@@ -303,6 +309,9 @@ namespace Muco
             }
             GUILayout.Space(20);
             GUILayout.Label("Project Settings ->  XR Plug-in Management -> Android Tab", styleSubHeader);
+            GUILayout.Space(5);
+            GUILayout.Label("Plug-In Providers",styleBold);
+            GUILayout.Space(5);
             bool openXRLoaderFound = false;
             if (xRGeneralSettings != null && xRGeneralSettings.Manager != null)
             {
@@ -310,19 +319,18 @@ namespace Muco
                 {
                     using (Horizontal)
                     {
-                        
+
                         if (loader.name == "OpenXRLoader")
                         {
                             openXRLoaderFound = true;
                         }
                         else
                         {
-                            
                             using (Vertical)
                             {
                                 GUILayout.Label(loader.name + " (Undesired)", styleLabelRed);
                             }
-                            GUILayout.FlexibleSpace(); 
+                            GUILayout.FlexibleSpace();
                             using (Vertical)
                             {
                                 if (GUILayout.Button("Remove", styleButtonRed))
@@ -333,10 +341,6 @@ namespace Muco
                         }
                     }
                 }
-                if (xRGeneralSettings.Manager.activeLoaders.Count <= 1 && openXRLoaderFound)
-                {
-                    GUILayout.Label("No undesired XR Plugins loaded!");
-                }
             }
             using (Horizontal)
             {
@@ -346,7 +350,7 @@ namespace Muco
                         GUILayout.Label("OpenXRLoader");
                     }
                 }
-                GUILayout.FlexibleSpace(); 
+                GUILayout.FlexibleSpace();
                 using (Vertical)
                 {
                     if (openXRLoaderFound)
@@ -367,34 +371,84 @@ namespace Muco
                 }
             }
 
+            var settings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
+            GUILayout.Space(5);
+            GUILayout.Label("OpenXR Settings",styleBold);
+            GUILayout.Space(5);
+            using (Horizontal)
+            {
+                using (Vertical)
+                {
+                    GUILayout.Label("Multipass ON (For Built-in pipeline",styleList);
+                }
+                GUILayout.FlexibleSpace();
+                using (Vertical)
+                {
+                    if (settings.renderMode == OpenXRSettings.RenderMode.MultiPass)
+                    {
+                        GUILayout.Label("OK", styleButtonGreen);
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("Set Render Mode", styleButtonNormal))
+                        {
+                            settings.renderMode = OpenXRSettings.RenderMode.MultiPass;
+                        }
+                    }
+                }
+                      
+                
+            }
+            using (Horizontal)
+            {
+                using (Vertical)
+                {
+                    GUILayout.Label("Latency Optimiziation - Prioritize rendering ON",styleList);
+                }
+                GUILayout.FlexibleSpace();
+                using (Vertical)
+                {
+                    if (settings.latencyOptimization == OpenXRSettings.LatencyOptimization.PrioritizeRendering)
+                    {
+                        GUILayout.Button("OK", styleButtonGreen);
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("Set Latency Optimization", styleButtonNormal))
+                        {
+                            settings.latencyOptimization = OpenXRSettings.LatencyOptimization.PrioritizeRendering;
+                        }
+                    }
+                }
+            }
+            
 
-
-            GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem ON");
-            GUILayout.Label("OpenXR -> Latency Optimiziation - Prioritize rendering ON");
-            GUILayout.Label("OpenXR -> Multipass ON (For Built-in pipeline)");
             GUILayout.Space(20);
             GUILayout.Label("Headset Build Check List", styleSubHeader);
             GUILayout.Space(5);
+
             EditorGUI.BeginChangeCheck();
             var options = Enum.GetNames(typeof(XRHeadsetType));
-            var _selected = EditorGUILayout.Popup("Select Headset", (int)selectedXRHeadsetType, options);
+            var _selected = EditorGUILayout.Popup("", (int)selectedXRHeadsetType, options);
             if (EditorGUI.EndChangeCheck())
             {
                 selectedXRHeadsetType = (XRHeadsetType)_selected;
             }
+            GUILayout.Space(5);
+            GUILayout.Label("Package",styleBold);
+            GUILayout.Space(5);
             switch (selectedXRHeadsetType)
             {
-                case XRHeadsetType.MetaQuest2:
-                    GUILayout.Label("XR Plugin Management -> OpenXR -> Meta Quest Support ON");
-                    GUILayout.Label("OpenXR -> Enabled Interaction Profiles: Oculus Touch Controller Profiles");
-                    break;
+
                 case XRHeadsetType.Pico4UltraEnterprise:
                     using (Horizontal)
                     {
+
                         using (Vertical)
                         {
                             GUILayout.Label("Install PicoXR package");
                         }
+                        GUILayout.FlexibleSpace();
                         using (Vertical)
                         {
                             if (IsPackageInstalled("com.unity.xr.openxr.picoxr"))
@@ -403,18 +457,89 @@ namespace Muco
                             }
                             else
                             {
-                                if (GUILayout.Button("Install Package"))
+                                if (GUILayout.Button("Install Package", styleButtonNormal))
                                 {
                                     AddPackage("com.unity.xr.openxr.picoxr@https://github.com/Pico-Developer/PICO-Unity-OpenXR-SDK.git");
                                 }
                             }
                         }
                     }
-                    GUILayout.Label("XR Plugin Management -> OpenXR -> Pico OpenXR Features ON");
-                    GUILayout.Label("XR Plugin Management -> OpenXR -> Pico Support ON");
-                    GUILayout.Label("XR Plugin Management -> OpenXR -> Meta Quest Support OFF");
-                    GUILayout.Label("XR Plugin Management -> OpenXR -> Enabled Interaction Profiles -> ONLY PICO 4 Ultra Touch Controller Profile ON");
                     break;
+            }
+            GUILayout.Space(5);
+            GUILayout.Label("Features and Profiles",styleBold);
+            GUILayout.Space(5);
+            if (settings == null)
+            {
+                UnityEngine.Debug.Log($"No OpenXR settings found.");
+                return;
+            }
+            var features = settings.GetFeatures<OpenXRFeature>();
+
+            // check if we want feature
+
+            using (Horizontal)
+            {
+                using (Vertical)
+                {
+                    foreach (var feature in features)
+                    {
+                        if (!OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name) && !feature.enabled)
+                            continue;
+                        GUILayout.Label(feature.name,styleList);
+                    }
+
+                }
+                GUILayout.FlexibleSpace();
+                using (Vertical)
+                {
+                    bool anywrongfeatures = false;
+                    foreach (var feature in features)
+                    {
+                        var shouldBeEnabled = OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name);
+
+                        if (!shouldBeEnabled && !feature.enabled)
+                            continue;
+
+                        if (shouldBeEnabled != feature.enabled)
+                            anywrongfeatures = true;
+
+                        if (shouldBeEnabled)
+                            {
+                                if (feature.enabled)
+                                {
+                                    GUILayout.Button("OK", styleButtonGreen);
+                                }
+                                else
+                                {
+                                    if (GUILayout.Button("Enable feature", styleButtonNormal))
+                                    {
+                                        feature.enabled = true;
+                                        EditorUtility.SetDirty(settings);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                {
+                                    if (GUILayout.Button("Disable feature", styleButtonRed))
+                                    {
+                                        feature.enabled = false;
+                                        EditorUtility.SetDirty(settings);
+                                    }
+                                }
+                            }
+
+                    }
+                    if (anywrongfeatures)
+                    {
+                        if (GUILayout.Button("Set All Features", styleButtonNormal))
+                        {
+                            EnableAppropriateFeatures();
+                        }
+                    }
+                    
+                }
             }
             EditorGUILayout.EndScrollView();
         }
@@ -491,7 +616,7 @@ namespace Muco
                 Debug.Log("Android texture compression format is already set to ASTC.");
             }
         }
-        
+
         private void Reload()
         {
             var type = Assembly.Load(new AssemblyName("Unity.XR.Management.Editor")).GetType($"UnityEditor.XR.Management.XRManagerSettingsEditor");
@@ -513,5 +638,50 @@ namespace Muco
                 Debug.LogError("Failed to find the Reload() method.");
             }
         }
+
+        bool OpenXRFeatureShouldBeEnabled(XRHeadsetType headsetType, string featureId)
+        {
+            if (featureId == "HandTracking")
+                return true;
+            switch (headsetType)
+            {
+                case XRHeadsetType.MetaQuest2:
+                    if (featureId == "MetaQuestFeature")
+                        return true;
+                    if (featureId == "OculusTouchControllerProfile")
+                        return true;
+                    break;
+                case XRHeadsetType.Pico4UltraEnterprise:
+                    if (featureId == "OpenXRExtensions")
+                        return true;
+                    if (featureId == "PICOFeature")
+                        return true;
+                    if (featureId == "PICO4UltraControllerProfile")
+                        return true;
+                    break;
+            }
+            return false;
+        }
+
+        private void EnableAppropriateFeatures()
+        {
+            var settings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
+            if (settings == null)
+            {
+                UnityEngine.Debug.Log($"No OpenXR settings found.");
+                return;
+            }
+
+            var features = settings.GetFeatures<OpenXRFeature>();
+            Debug.Log(selectedXRHeadsetType);
+            foreach (var feature in features)
+            {
+                UnityEngine.Debug.Log(feature.GetType().Name + " " + feature.enabled);
+                var shouldBeEnabled = OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name);
+                feature.enabled = shouldBeEnabled;
+            }
+            EditorUtility.SetDirty(settings);
+        }
+
     }
 }
