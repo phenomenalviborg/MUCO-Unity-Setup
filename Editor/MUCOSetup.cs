@@ -108,6 +108,9 @@ namespace Muco
             Init();
             LoadXR();
 
+            GUIStyle styleButtonNormal = new GUIStyle(GUI.skin.button);
+            styleButtonNormal.fixedWidth = 200;
+
             GUIStyle styleButtonRed = new GUIStyle(GUI.skin.button);
             styleButtonRed.normal.textColor = Color.red;
             styleButtonRed.fixedWidth = 200;
@@ -177,7 +180,7 @@ namespace Muco
                         }
                         else
                         {
-                            if (GUILayout.Button("Install Package"))
+                            if (GUILayout.Button("Install Package",styleButtonNormal))
                             {
                                 AddPackage(kvp.Key + "@" + kvp.Value);
                             }
@@ -185,7 +188,7 @@ namespace Muco
                     }
                     if (!AreAllPAckagesInstalled(packages))
                     {
-                        if (GUILayout.Button("Install All Packages"))
+                        if (GUILayout.Button("Install All Packages",styleButtonNormal))
                         {
                             AddPackages(packages);
                             Repaint();
@@ -207,7 +210,7 @@ namespace Muco
                     }
                     else
                     {
-                        GUILayout.Label("Texture Compression Format: Android Only", styleButtonRed, biggerLineHeight);
+                        GUILayout.Label("Texture Compression Format: Android Only", styleLabelRed, biggerLineHeight);
                     }
                 }
                 GUILayout.FlexibleSpace(); 
@@ -219,7 +222,7 @@ namespace Muco
                     }
                     else
                     {
-                        if (GUILayout.Button("Set Build Target to Android"))
+                        if (GUILayout.Button("Set Build Target to Android",styleButtonNormal))
                         {
                             EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
                         }
@@ -339,7 +342,7 @@ namespace Muco
                     }
                     else
                     {
-                        if (GUILayout.Button("Use OpenXRLoader", styleButtonRed))
+                        if (GUILayout.Button("Use OpenXRLoader", styleButtonNormal))
                         {
                             XRPackageMetadataStore.AssignLoader(xRGeneralSettings.Manager, "Unity.XR.OpenXR.OpenXRLoader", BuildTargetGroup.Android);
                             EditorUtility.SetDirty(xRGeneralSettings);
