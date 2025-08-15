@@ -360,6 +360,7 @@ namespace Muco
             EditorGUI.BeginChangeCheck();
             var options = Enum.GetNames(typeof(XRHeadsetType));
             var _selected = EditorGUILayout.Popup("Select Headset", (int)selectedXRHeadsetType, options);
+            _selected.fixedWidth = 200;
             if (EditorGUI.EndChangeCheck())
             {
                 selectedXRHeadsetType = (XRHeadsetType)_selected;
@@ -472,28 +473,6 @@ namespace Muco
             {
                 Debug.Log("Android texture compression format is already set to ASTC.");
             }
-        }
-
-        XRLoader FindOrNewOpenXRLoader()
-        {
-            Debug.Log("Finding");
-            foreach (var loader in xRGeneralSettings.Manager.loaders)
-            {
-                if (loader == null)
-                    continue;
-                Debug.Log("hello: " + loader.name);
-                if (loader is UnityEngine.XR.OpenXR.OpenXRLoader)
-                    return loader;
-            }
-            var found = FindFirstObjectByType<UnityEngine.XR.OpenXR.OpenXRLoader>();
-            if (found != null)
-            {
-                Debug.Log("I found this");
-                return found as XRLoader;
-            }
-            var newLoader = ScriptableObject.CreateInstance(typeof(UnityEngine.XR.OpenXR.OpenXRLoader)) as XRLoader;
-            newLoader.name = "OpenXRLoader";
-            return newLoader;
         }
         
         private void Reload()
