@@ -169,29 +169,44 @@ namespace Muco
                         GUILayout.Label(kvp.Key, labelStyleNextToButton, biggerLineHeight);
                     }
                 }
-                GUILayout.FlexibleSpace(); 
+                GUILayout.FlexibleSpace();
                 using (Vertical)
                 {
+                   
                     foreach (KeyValuePair<string, string> kvp in packages)
                     {
-                        if (IsPackageInstalled(kvp.Key))
+                        if (EditorGUILayout.LinkButton("Link"))
                         {
-                            GUILayout.Label("OK", styleButtonGreen);
+                            Application.OpenURL(kvp.Value);
                         }
-                        else
+                    } 
+                }
+                using (Vertical)
+                {
+
+                    {
+                        foreach (KeyValuePair<string, string> kvp in packages)
                         {
-                            if (GUILayout.Button("Install Package",styleButtonNormal))
+
+                            if (IsPackageInstalled(kvp.Key))
                             {
-                                AddPackage(kvp.Key + "@" + kvp.Value);
+                                GUILayout.Label("OK", styleButtonGreen);
+                            }
+                            else
+                            {
+                                if (GUILayout.Button("Install Package", styleButtonNormal))
+                                {
+                                    AddPackage(kvp.Key + "@" + kvp.Value);
+                                }
                             }
                         }
-                    }
-                    if (!AreAllPAckagesInstalled(packages))
-                    {
-                        if (GUILayout.Button("Install All Packages",styleButtonNormal))
+                        if (!AreAllPAckagesInstalled(packages))
                         {
-                            AddPackages(packages);
-                            Repaint();
+                            if (GUILayout.Button("Install All Packages", styleButtonNormal))
+                            {
+                                AddPackages(packages);
+                                Repaint();
+                            }
                         }
                     }
                 }
@@ -250,7 +265,7 @@ namespace Muco
                 }
             }
             GUILayout.Space(20);
-            GUILayout.Label("Project Settings - Player", styleSubHeader);
+            GUILayout.Label("Project Settings -> Player", styleSubHeader);
             using (Horizontal)
             {
                 using (Vertical)
@@ -287,7 +302,7 @@ namespace Muco
                 }
             }
             GUILayout.Space(20);
-            GUILayout.Label("Project Settings - > Android -> XR Plug-in Management", styleSubHeader);
+            GUILayout.Label("Project Settings ->  XR Plug-in Management -> Android Tab", styleSubHeader);
             bool openXRLoaderFound = false;
             if (xRGeneralSettings != null && xRGeneralSettings.Manager != null)
             {
