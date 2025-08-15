@@ -1,19 +1,20 @@
 {
   "name": "com.phenomenalviborg.muco-setup",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "displayName": "MUCO Setup",
   "description": "MUCO Unity Setup",
   "unity": "6000.0",
   "dependencies": {
-    "com.unity.xr.hands": "1.5.1",
     "com.unity.xr.management": "4.5.1",
+    "com.unity.xr.hands": "1.5.1",
     "com.unity.xr.openxr": "1.15.1",
     "com.unity.adaptiveperformance": "5.1.5",
     "com.unity.adaptiveperformance.samsung.android":"5.1.0"
   },
   "keywords": [
     "MUCO",
-    "VR"
+    "VR",
+    "COLOCATION"
   ],
   "author": {
     "name": "Phenomenal Viborg",
