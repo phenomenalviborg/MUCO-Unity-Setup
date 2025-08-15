@@ -360,7 +360,6 @@ namespace Muco
             EditorGUI.BeginChangeCheck();
             var options = Enum.GetNames(typeof(XRHeadsetType));
             var _selected = EditorGUILayout.Popup("Select Headset", (int)selectedXRHeadsetType, options);
-            _selected.fixedWidth = 200;
             if (EditorGUI.EndChangeCheck())
             {
                 selectedXRHeadsetType = (XRHeadsetType)_selected;
