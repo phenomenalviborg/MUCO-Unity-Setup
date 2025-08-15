@@ -6,8 +6,11 @@ using System.IO;
 using System.Collections.Generic;
 using UnityEngine.XR.Management;
 using UnityEditor.XR.Management;
-using UnityEditor.XR.OpenXR;
+using UnityEditor.XR.Management.Metadata;
 using System;
+using System.Reflection;
+using System.Linq;
+
 namespace Muco
 {
     public class MUCOSetup : EditorWindow
@@ -21,7 +24,7 @@ namespace Muco
             }
 
             Orientation currentOrientation;
-            
+
             public GUILayoutHelper(Orientation orientation)
             {
                 switch (orientation)
@@ -67,7 +70,8 @@ namespace Muco
         };
 
         bool isInitialized;
-        void Init() {
+        void Init()
+        {
             if (isInitialized)
                 return;
 
@@ -77,14 +81,16 @@ namespace Muco
             isInitialized = true;
         }
 
-        void Awake() {
+        void Awake()
+        {
             Init();
             LoadXR();
         }
 
-        void OnValidate() {
+        void OnValidate()
+        {
             Init();
-            LoadXR();   
+            LoadXR();
         }
 
         Texture2D logo;
@@ -96,17 +102,23 @@ namespace Muco
         }
 
         Vector2 scrollPos = Vector2.zero;
-    
+
         private void OnGUI()
         {
             Init();
             LoadXR();
 
-            GUIStyle styleRed = new GUIStyle(GUI.skin.button);
-            styleRed.normal.textColor = Color.red;
+            GUIStyle styleButtonRed = new GUIStyle(GUI.skin.button);
+            styleButtonRed.normal.textColor = Color.red;
+            styleButtonRed.fixedWidth = 200;
 
-            GUIStyle styleGreen = new GUIStyle(GUI.skin.button);
-            styleGreen.normal.textColor = Color.green;
+            GUIStyle styleButtonGreen = new GUIStyle(GUI.skin.button);
+            styleButtonGreen.normal.textColor = Color.green;
+            styleButtonGreen.fixedWidth = 200;
+
+            GUIStyle styleLabelRed = new GUIStyle();
+            styleLabelRed.normal.textColor = Color.red;
+            styleLabelRed.padding = new RectOffset(6, 3, 3, 3);
 
             GUIStyle styleHeader = new GUIStyle();
             styleHeader.fontSize = 20;
@@ -119,6 +131,11 @@ namespace Muco
             styleSubHeader.fontStyle = FontStyle.Bold;
             styleSubHeader.normal.textColor = Color.gray;
             styleSubHeader.padding = new RectOffset(6, 0, 0, 0);
+
+            GUIStyle styleBold = new GUIStyle();
+            styleBold.fontStyle = FontStyle.Bold;
+            styleBold.padding = new RectOffset(6, 0, 0, 0);
+            styleBold.normal.textColor = EditorStyles.label.normal.textColor;
 
             var lineHeight = 19;
 
@@ -149,13 +166,14 @@ namespace Muco
                         GUILayout.Label(kvp.Key, labelStyleNextToButton, biggerLineHeight);
                     }
                 }
+                GUILayout.FlexibleSpace(); 
                 using (Vertical)
                 {
                     foreach (KeyValuePair<string, string> kvp in packages)
                     {
                         if (IsPackageInstalled(kvp.Key))
                         {
-                            GUILayout.Label("OK", styleGreen);
+                            GUILayout.Label("OK", styleButtonGreen);
                         }
                         else
                         {
@@ -189,14 +207,15 @@ namespace Muco
                     }
                     else
                     {
-                        GUILayout.Label("Texture Compression Format: Android Only", styleRed, biggerLineHeight);
+                        GUILayout.Label("Texture Compression Format: Android Only", styleButtonRed, biggerLineHeight);
                     }
                 }
+                GUILayout.FlexibleSpace(); 
                 using (Vertical)
                 {
                     if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
                     {
-                        GUILayout.Label("OK", styleGreen);
+                        GUILayout.Label("OK", styleButtonGreen);
                     }
                     else
                     {
@@ -209,7 +228,7 @@ namespace Muco
                     {
                         if (EditorUserBuildSettings.androidBuildSubtarget == MobileTextureSubtarget.ASTC)
                         {
-                            GUILayout.Label("OK", styleGreen);
+                            GUILayout.Label("OK", styleButtonGreen);
                         }
                         else
                         {
@@ -236,11 +255,12 @@ namespace Muco
                     GUILayout.Label("Color Space: " + PlayerSettings.colorSpace);
                     GUILayout.Label("Android Minimum API Level: " + ((int)PlayerSettings.Android.minSdkVersion));
                 }
+                GUILayout.FlexibleSpace();
                 using (Vertical)
                 {
 
                     if (PlayerSettings.colorSpace == ColorSpace.Linear)
-                        GUILayout.Label("OK", styleGreen);
+                        GUILayout.Label("OK", styleButtonGreen);
                     else
                     {
                         if (GUILayout.Button("Set Color Space to Linear"))
@@ -257,7 +277,7 @@ namespace Muco
                     }
                     else
                     {
-                        if (GUILayout.Button("OK", styleGreen))
+                        if (GUILayout.Button("OK", styleButtonGreen))
                         {
                         }
                     }
@@ -268,63 +288,67 @@ namespace Muco
             bool openXRLoaderFound = false;
             if (xRGeneralSettings != null && xRGeneralSettings.Manager != null)
             {
-                GUILayout.Label("Target XR Plugins: ");
-                using (Horizontal)
+                foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                 {
-                    
-                    foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
+                    using (Horizontal)
                     {
-                        using (Vertical)
+                        
+                        if (loader.name == "OpenXRLoader")
                         {
-                            {
-                                GUILayout.Label(loader.name);
-                            }
+                            openXRLoaderFound = true;
                         }
-                        using (Vertical)
+                        else
                         {
-                            if (loader.name == "OpenXRLoader")
+                            
+                            using (Vertical)
                             {
-                                openXRLoaderFound = true;
-                                GUILayout.Label("OK", styleGreen);
+                                GUILayout.Label(loader.name + " (Undesired)", styleLabelRed);
                             }
-                            else
+                            GUILayout.FlexibleSpace(); 
+                            using (Vertical)
                             {
-                                if (GUILayout.Button("Remove", styleRed))
+                                if (GUILayout.Button("Remove", styleButtonRed))
                                 {
                                     xRGeneralSettings.Manager.TryRemoveLoader(loader);
                                 }
                             }
                         }
                     }
-                    if (!openXRLoaderFound)
+                }
+                if (xRGeneralSettings.Manager.activeLoaders.Count <= 1 && openXRLoaderFound)
+                {
+                    GUILayout.Label("No undesired XR Plugins loaded!");
+                }
+            }
+            using (Horizontal)
+            {
+                using (Vertical)
+                {
                     {
-                        using (Vertical)
+                        GUILayout.Label("OpenXRLoader");
+                    }
+                }
+                GUILayout.FlexibleSpace(); 
+                using (Vertical)
+                {
+                    if (openXRLoaderFound)
+                    {
+                        if (GUILayout.Button("OK", styleButtonGreen))
                         {
-                            {
-                                GUILayout.Label("OpenXRLoader (missing)");
-                            }
-                        }
-                        using (Vertical)
-                        { 
-                            if (GUILayout.Button("Use OpenXRLoader", styleRed))
-                            {
-                                var XRLoader = new  OpenXRLoader() as XRLoader;
-                                xRGeneralSettings.Manager.TryAddLoader(XRLoader);
-                            }
                         }
                     }
                     else
                     {
-                        using (Vertical)
+                        if (GUILayout.Button("Use OpenXRLoader", styleButtonRed))
                         {
-                            {
-                                GUILayout.Label("OpenXRLoader (not missing)");
-                                
-                            }
+                            XRPackageMetadataStore.AssignLoader(xRGeneralSettings.Manager, "Unity.XR.OpenXR.OpenXRLoader", BuildTargetGroup.Android);
+                            EditorUtility.SetDirty(xRGeneralSettings);
+                            Reload();
                         }
                     }
                 }
             }
+
 
 
             GUILayout.Label("OpenXR -> OpenXR Feature Groups: Hand Tracking Subsystem ON");
@@ -357,7 +381,7 @@ namespace Muco
                         {
                             if (IsPackageInstalled("com.unity.xr.openxr.picoxr"))
                             {
-                                GUILayout.Label("OK", styleGreen);
+                                GUILayout.Label("OK", styleButtonGreen);
                             }
                             else
                             {
@@ -387,24 +411,19 @@ namespace Muco
 
         XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
         XRGeneralSettings xRGeneralSettings;
-        
+
         bool xrLoaded = false;
         private void LoadXR()
         {
             if (xrLoaded)
                 return;
-            xRGeneralSettings = XRGeneralSettings.CreateInstance<XRGeneralSettings>();
-
-            if (xRGeneralSettings != null)
-            {
-                buildTargetSettingsPerBuildTarget = null;
-                EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out buildTargetSettingsPerBuildTarget);
-                if (buildTargetSettingsPerBuildTarget == null)
-                    return;
-                xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
-                if (xRGeneralSettings == null)
-                    return;
-            }
+            buildTargetSettingsPerBuildTarget = null;
+            EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out buildTargetSettingsPerBuildTarget);
+            if (buildTargetSettingsPerBuildTarget == null)
+                return;
+            xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
+            if (xRGeneralSettings == null)
+                return;
             xrLoaded = true;
         }
         public static bool IsPackageInstalled(string packageId)
@@ -412,10 +431,11 @@ namespace Muco
             if (!File.Exists("Packages/manifest.json"))
                 return false;
             string jsonText = File.ReadAllText("Packages/manifest.json");
-            return jsonText.Contains("\""+packageId+"\"");
+            return jsonText.Contains("\"" + packageId + "\"");
         }
 
-        public static bool AreAllPAckagesInstalled(Dictionary<string, string> packages) {
+        public static bool AreAllPAckagesInstalled(Dictionary<string, string> packages)
+        {
             foreach (KeyValuePair<string, string> kvp in packages)
             {
                 if (!IsPackageInstalled(kvp.Key))
@@ -427,20 +447,20 @@ namespace Muco
         }
 
         static void AddPackages(Dictionary<string, string> packages)
+        {
+            foreach (KeyValuePair<string, string> kvp in packages)
             {
-                foreach (KeyValuePair<string, string> kvp in packages)
-                {
-                    if (!IsPackageInstalled(kvp.Key))
-                        AddPackage(kvp.Key + "@" + kvp.Value);
-                }
+                if (!IsPackageInstalled(kvp.Key))
+                    AddPackage(kvp.Key + "@" + kvp.Value);
             }
+        }
 
         static AddRequest Request;
         static void AddPackage(string name)
         {
             Request = Client.Add(name);
         }
-        
+
         private static void SetAndroidTextureCompressionToASTC()
         {
             if (EditorUserBuildSettings.androidBuildSubtarget != MobileTextureSubtarget.ASTC)
@@ -454,5 +474,48 @@ namespace Muco
             }
         }
 
+        XRLoader FindOrNewOpenXRLoader()
+        {
+            Debug.Log("Finding");
+            foreach (var loader in xRGeneralSettings.Manager.loaders)
+            {
+                if (loader == null)
+                    continue;
+                Debug.Log("hello: " + loader.name);
+                if (loader is UnityEngine.XR.OpenXR.OpenXRLoader)
+                    return loader;
+            }
+            var found = FindFirstObjectByType<UnityEngine.XR.OpenXR.OpenXRLoader>();
+            if (found != null)
+            {
+                Debug.Log("I found this");
+                return found as XRLoader;
+            }
+            var newLoader = ScriptableObject.CreateInstance(typeof(UnityEngine.XR.OpenXR.OpenXRLoader)) as XRLoader;
+            newLoader.name = "OpenXRLoader";
+            return newLoader;
+        }
+        
+        private void Reload()
+        {
+            var type = Assembly.Load(new AssemblyName("Unity.XR.Management.Editor")).GetType($"UnityEditor.XR.Management.XRManagerSettingsEditor");
+
+            if (type == null) return;
+
+            var xrManagerSettingsEditorInstance = Resources.FindObjectsOfTypeAll<UnityEditor.Editor>().FirstOrDefault(obj => obj.GetType() == type);
+
+            if (xrManagerSettingsEditorInstance == null) return;
+
+            var reloadMethod = type.GetMethod("Reload", BindingFlags.Public | BindingFlags.Instance);
+
+            if (reloadMethod != null)
+            {
+                reloadMethod.Invoke(xrManagerSettingsEditorInstance, null);
+            }
+            else
+            {
+                Debug.LogError("Failed to find the Reload() method.");
+            }
+        }
     }
 }
