@@ -341,35 +341,37 @@ namespace Muco
                         }
                     }
                 }
-            }
-            using (Horizontal)
-            {
-                using (Vertical)
+                using (Horizontal)
                 {
+                    using (Vertical)
                     {
-                        GUILayout.Label("OpenXRLoader");
-                    }
-                }
-                GUILayout.FlexibleSpace();
-                using (Vertical)
-                {
-                    if (openXRLoaderFound)
-                    {
-                        if (GUILayout.Button("OK", styleButtonGreen))
                         {
+                            GUILayout.Label("OpenXRLoader");
                         }
                     }
-                    else
+                    GUILayout.FlexibleSpace();
+                    using (Vertical)
                     {
-                        if (GUILayout.Button("Use OpenXRLoader", styleButtonNormal))
+                        if (openXRLoaderFound)
                         {
-                            XRPackageMetadataStore.AssignLoader(xRGeneralSettings.Manager, "Unity.XR.OpenXR.OpenXRLoader", BuildTargetGroup.Android);
-                            EditorUtility.SetDirty(xRGeneralSettings);
-                            Reload();
+                            if (GUILayout.Button("OK", styleButtonGreen))
+                            {
+                            }
+                        }
+                        else
+                        {
+                            if (GUILayout.Button("Use OpenXRLoader", styleButtonNormal))
+                            {
+                                Debug.Log(xRGeneralSettings);
+                                XRPackageMetadataStore.AssignLoader(xRGeneralSettings.Manager, "Unity.XR.OpenXR.OpenXRLoader", BuildTargetGroup.Android);
+                                EditorUtility.SetDirty(xRGeneralSettings);
+                                Reload();
+                            }
                         }
                     }
                 }
             }
+            
 
             var settings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
             GUILayout.Space(5);
