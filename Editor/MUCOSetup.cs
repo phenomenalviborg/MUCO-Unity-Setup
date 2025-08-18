@@ -326,7 +326,7 @@ namespace Muco
                     {
                         if (GUILayout.Button("Initalize android XR", styleButtonNormal))
                         {
-                            InitializeAndroidXR();
+                            InitializeAndroidXRSettings();
                         }
                         
                     }
@@ -574,8 +574,9 @@ namespace Muco
             Pico4UltraEnterprise
         }
 
-        XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
-        XRGeneralSettings xRGeneralSettings;
+        public static XRGeneralSettings xRGeneralSettings;
+
+        public static XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
 
         bool xrLoaded = false;
 
@@ -586,41 +587,31 @@ namespace Muco
             buildTargetSettingsPerBuildTarget = null;
             EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out buildTargetSettingsPerBuildTarget);
             if (buildTargetSettingsPerBuildTarget == null)
-                return;
+                    InitializeXRGeneralSettingsPerBuildTarget();
             xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
             if (xRGeneralSettings == null)
                 InitializeAndroidXRSettings();
             xrLoaded = true;
         }
 
+        public static void InitializeXRGeneralSettingsPerBuildTarget()
+        {
+            buildTargetSettingsPerBuildTarget = ScriptableObject.CreateInstance<XRGeneralSettingsPerBuildTarget>();
+        }
+
         public static void InitializeAndroidXRSettings()
         {
-            string[] guids = AssetDatabase.FindAssets("t:XRGeneralSettingsPerBuildTarget");
-            if (guids.Length == 0)
-            {
-                return;
-            }
 
-            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-            XRGeneralSettingsPerBuildTarget buildTargetSettings =
-                AssetDatabase.LoadAssetAtPath<XRGeneralSettingsPerBuildTarget>(path);
-
-            var existing = buildTargetSettings.SettingsForBuildTarget(BuildTargetGroup.Android);
-            if (existing != null)
-            {
-                return;
-            }
-
-            XRGeneralSettings androidSettings = ScriptableObject.CreateInstance<XRGeneralSettings>();
+            xRGeneralSettings = ScriptableObject.CreateInstance<XRGeneralSettings>();
             XRManagerSettings manager = ScriptableObject.CreateInstance<XRManagerSettings>();
-            androidSettings.AssignedSettings = manager;
+            xRGeneralSettings.AssignedSettings = manager;
 
-            AssetDatabase.AddObjectToAsset(androidSettings, buildTargetSettings);
-            AssetDatabase.AddObjectToAsset(manager, buildTargetSettings);
+            AssetDatabase.AddObjectToAsset(xRGeneralSettings, buildTargetSettingsPerBuildTarget);
+            AssetDatabase.AddObjectToAsset(manager, buildTargetSettingsPerBuildTarget);
 
-            buildTargetSettings.SetSettingsForBuildTarget(BuildTargetGroup.Android, androidSettings);
+            buildTargetSettingsPerBuildTarget.SetSettingsForBuildTarget(BuildTargetGroup.Android, xRGeneralSettings);
 
-            EditorUtility.SetDirty(buildTargetSettings);
+            EditorUtility.SetDirty(buildTargetSettingsPerBuildTarget);
             AssetDatabase.SaveAssets();
         }
         public static bool IsPackageInstalled(string packageId)
