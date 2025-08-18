@@ -313,6 +313,25 @@ namespace Muco
             GUILayout.Label("Plug-In Providers",styleBold);
             GUILayout.Space(5);
             bool openXRLoaderFound = false;
+            if (xRGeneralSettings == null)
+            {
+                using (Horizontal)
+                {
+                    using (Vertical)
+                    {
+                        GUILayout.Label("Android XR settings not initialized", styleLabelRed);
+                    }
+                    GUILayout.FlexibleSpace();
+                    using (Vertical)
+                    {
+                        if (GUILayout.Button("Initalize android XR", styleButtonNormal))
+                        {
+                            InitializeAndroidXR();
+                        }
+                        
+                    }
+                }
+            }
 
             if (xrLoaded)
             {
