@@ -72,6 +72,16 @@ namespace Muco
         };
 
         bool isInitialized;
+
+        private Dictionary<string, bool> packageStatusCache = new Dictionary<string, bool>();
+        private double lastPackageCheck = 0;
+        private const double PACKAGE_CHECK_INTERVAL = 2.0; 
+
+        private OpenXRSettings cachedXRSettings;
+        private OpenXRFeature[] cachedXRFeatures;
+        private double lastXRCheck = 0;
+        private const double XR_CHECK_INTERVAL = 1.0; 
+
         void Init()
         {
             if (isInitialized)
@@ -80,19 +90,50 @@ namespace Muco
             logo = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 "Packages/com.phenomenalviborg.muco-setup/Editor/MUCO-LOGO.png"
             );
+
+            styleButtonNormal = new GUIStyle(GUI.skin.button);
+            styleButtonRed = new GUIStyle(GUI.skin.button);
+            styleButtonGreen = new GUIStyle(GUI.skin.button);
+            styleButtonNormal.fixedWidth = 200;
+
+            styleButtonRed.normal.textColor = Color.red;
+            styleButtonRed.fixedWidth = 200;
+
+            styleButtonGreen.normal.textColor = Color.green;
+            styleButtonGreen.fixedWidth = 200;
+
+            styleLabelRed.normal.textColor = Color.red;
+            styleLabelRed.padding = new RectOffset(6, 3, 3, 3);
+
+            styleHeader.fontSize = 20;
+            styleHeader.fontStyle = FontStyle.Bold;
+            styleHeader.normal.textColor = Color.white;
+            styleHeader.padding = new RectOffset(0, 5, 7, 5);
+
+            styleSubHeader.fontSize = 15;
+            styleSubHeader.fontStyle = FontStyle.Bold;
+            styleSubHeader.normal.textColor = Color.gray;
+            styleSubHeader.padding = new RectOffset(6, 0, 0, 0);
+
+            styleBold.fontStyle = FontStyle.Bold;
+            styleBold.padding = new RectOffset(6, 0, 0, 0);
+            styleBold.normal.textColor = Color.gray;
+
+            styleList.normal.textColor = EditorStyles.label.normal.textColor;
+            styleList.padding = new RectOffset(6, 3, 3, 3);
+
+            ShowWindow();
             isInitialized = true;
         }
 
         void Awake()
         {
             Init();
-            LoadXR();
         }
 
         void OnValidate()
         {
             Init();
-            LoadXR();
         }
 
         Texture2D logo;
@@ -105,49 +146,55 @@ namespace Muco
 
         Vector2 scrollPos = Vector2.zero;
 
+        GUIStyle styleButtonNormal;
+        GUIStyle styleButtonRed;
+        GUIStyle styleButtonGreen;
+        GUIStyle styleLabelRed = new GUIStyle();
+        GUIStyle styleHeader = new GUIStyle();
+        GUIStyle styleSubHeader = new GUIStyle();
+        GUIStyle styleBold = new GUIStyle();
+        GUIStyle styleList = new GUIStyle();
+
+        private void UpdatePackageStatusCache()
+        {
+            if (EditorApplication.timeSinceStartup - lastPackageCheck > PACKAGE_CHECK_INTERVAL)
+            {
+                packageStatusCache.Clear();
+                foreach (var kvp in packages)
+                {
+                    packageStatusCache[kvp.Key] = IsPackageInstalledDirect(kvp.Key);
+                }
+                packageStatusCache["com.unity.xr.openxr.picoxr"] = IsPackageInstalledDirect("com.unity.xr.openxr.picoxr");
+                lastPackageCheck = EditorApplication.timeSinceStartup;
+                Repaint();
+            }
+        }
+
+        private void UpdateXRSettingsCache()
+        {
+            if (EditorApplication.timeSinceStartup - lastXRCheck > XR_CHECK_INTERVAL)
+            {
+                cachedXRSettings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
+                if (cachedXRSettings != null)
+                {
+                    cachedXRFeatures = cachedXRSettings.GetFeatures<OpenXRFeature>();
+                }
+                lastXRCheck = EditorApplication.timeSinceStartup;
+                Repaint();
+            }
+        }
+
+        private bool IsPackageInstalledCached(string packageId)
+        {
+            return packageStatusCache.TryGetValue(packageId, out bool installed) && installed;
+        }
+
         private void OnGUI()
         {
-            Init();
-            LoadXR();
-
-            GUIStyle styleButtonNormal = new GUIStyle(GUI.skin.button);
-            styleButtonNormal.fixedWidth = 200;
-
-            GUIStyle styleButtonRed = new GUIStyle(GUI.skin.button);
-            styleButtonRed.normal.textColor = Color.red;
-            styleButtonRed.fixedWidth = 200;
-
-            GUIStyle styleButtonGreen = new GUIStyle(GUI.skin.button);
-            styleButtonGreen.normal.textColor = Color.green;
-            styleButtonGreen.fixedWidth = 200;
-
-            GUIStyle styleLabelRed = new GUIStyle();
-            styleLabelRed.normal.textColor = Color.red;
-            styleLabelRed.padding = new RectOffset(6, 3, 3, 3);
-
-            GUIStyle styleHeader = new GUIStyle();
-            styleHeader.fontSize = 20;
-            styleHeader.fontStyle = FontStyle.Bold;
-            styleHeader.normal.textColor = Color.white;
-            styleHeader.padding = new RectOffset(0, 5, 7, 5);
-
-            GUIStyle styleSubHeader = new GUIStyle();
-            styleSubHeader.fontSize = 15;
-            styleSubHeader.fontStyle = FontStyle.Bold;
-            styleSubHeader.normal.textColor = Color.gray;
-            styleSubHeader.padding = new RectOffset(6, 0, 0, 0);
-
-            GUIStyle styleBold = new GUIStyle();
-            styleBold.fontStyle = FontStyle.Bold;
-            styleBold.padding = new RectOffset(6, 0, 0, 0);
-            styleBold.normal.textColor = EditorStyles.label.normal.textColor;
-
-            GUIStyle styleList = new GUIStyle();
-            styleList.normal.textColor = EditorStyles.label.normal.textColor;
-            styleList.padding = new RectOffset(6, 3, 3, 3);
+            UpdatePackageStatusCache();
+            UpdateXRSettingsCache();
 
             var lineHeight = 19;
-
             var biggerLineHeight = new GUILayoutOption[] { GUILayout.Height(lineHeight) };
             var labelStyleNextToButton = new GUIStyle(GUI.skin.label);
 
@@ -178,7 +225,6 @@ namespace Muco
                 GUILayout.FlexibleSpace();
                 using (Vertical)
                 {
-
                     foreach (KeyValuePair<string, string> kvp in packages)
                     {
                         if (EditorGUILayout.LinkButton("Link"))
@@ -189,34 +235,34 @@ namespace Muco
                 }
                 using (Vertical)
                 {
-
+                    foreach (KeyValuePair<string, string> kvp in packages)
                     {
-                        foreach (KeyValuePair<string, string> kvp in packages)
+                        if (IsPackageInstalledCached(kvp.Key)) 
                         {
-
-                            if (IsPackageInstalled(kvp.Key))
+                            GUI.enabled = false;
+                            GUILayout.Label("OK", styleButtonGreen);
+                            GUI.enabled = true;
+                        }
+                        else
+                        {
+                            if (GUILayout.Button("Install Package", styleButtonNormal))
                             {
-                                GUILayout.Label("OK", styleButtonGreen);
-                            }
-                            else
-                            {
-                                if (GUILayout.Button("Install Package", styleButtonNormal))
-                                {
-                                    AddPackage(kvp.Key + "@" + kvp.Value);
-                                }
+                                AddPackage(kvp.Key + "@" + kvp.Value);
                             }
                         }
-                        if (!AreAllPAckagesInstalled(packages))
+                    }
+                    if (!AreAllPackagesInstalledCached(packages)) 
+                    {
+                        if (GUILayout.Button("Install All Packages", styleButtonNormal))
                         {
-                            if (GUILayout.Button("Install All Packages", styleButtonNormal))
-                            {
-                                AddPackages(packages);
-                                Repaint();
-                            }
+                            AddPackages(packages);
+                            Repaint();
                         }
                     }
                 }
             }
+
+            
             GUILayout.Space(20);
             GUILayout.Label("Build Settings", styleSubHeader);
             using (Horizontal)
@@ -231,7 +277,9 @@ namespace Muco
                     }
                     else
                     {
+                        GUI.enabled = false;
                         GUILayout.Label("Texture Compression Format: Android Only", styleLabelRed, biggerLineHeight);
+                        GUI.enabled = true;
                     }
                 }
                 GUILayout.FlexibleSpace();
@@ -239,7 +287,9 @@ namespace Muco
                 {
                     if (EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android)
                     {
+                        GUI.enabled = false;
                         GUILayout.Label("OK", styleButtonGreen);
+                        GUI.enabled = true;
                     }
                     else
                     {
@@ -252,7 +302,9 @@ namespace Muco
                     {
                         if (EditorUserBuildSettings.androidBuildSubtarget == MobileTextureSubtarget.ASTC)
                         {
+                            GUI.enabled = false;
                             GUILayout.Label("OK", styleButtonGreen);
+                            GUI.enabled = true;
                         }
                         else
                         {
@@ -270,6 +322,8 @@ namespace Muco
                     }
                 }
             }
+
+            
             GUILayout.Space(20);
             GUILayout.Label("Project Settings -> Player", styleSubHeader);
             using (Horizontal)
@@ -282,9 +336,12 @@ namespace Muco
                 GUILayout.FlexibleSpace();
                 using (Vertical)
                 {
-
                     if (PlayerSettings.colorSpace == ColorSpace.Linear)
+                    {
+                        GUI.enabled = false;
                         GUILayout.Label("OK", styleButtonGreen);
+                        GUI.enabled = true;
+                    }
                     else
                     {
                         if (GUILayout.Button("Set Color Space to Linear"))
@@ -301,45 +358,90 @@ namespace Muco
                     }
                     else
                     {
-                        if (GUILayout.Button("OK", styleButtonGreen))
-                        {
-                        }
-                    }
-                }
-            }
-            GUILayout.Space(20);
-            GUILayout.Label("Project Settings ->  XR Plug-in Management -> Android Tab", styleSubHeader);
-            GUILayout.Space(5);
-            GUILayout.Label("Plug-In Providers",styleBold);
-            GUILayout.Space(5);
-            bool openXRLoaderFound = false;
-            if (xRGeneralSettings == null)
-            {
-                using (Horizontal)
-                {
-                    using (Vertical)
-                    {
-                        GUILayout.Label("Android XR settings not initialized", styleLabelRed);
-                    }
-                    GUILayout.FlexibleSpace();
-                    using (Vertical)
-                    {
-                        if (GUILayout.Button("Initalize android XR", styleButtonNormal))
-                        {
-                            InitializeAndroidXRSettings();
-                        }
-                        
+                        GUI.enabled = false;
+                        GUILayout.Label("OK", styleButtonGreen);
+                        GUI.enabled = true;
                     }
                 }
             }
 
-            if (xrLoaded)
+            
+            GUILayout.Space(20);
+            GUILayout.Label("Project Settings ->  XR Plug-in Management -> Android Tab", styleSubHeader);
+            GUILayout.Space(5);
+            GUILayout.Label("Plug-In Management", styleBold);
+            GUILayout.Space(5);
+
+            using (Horizontal)
+            {
+                using (Vertical)
+                {
+                    GUILayout.Label("XR Plug-In Management");
+                }
+                GUILayout.FlexibleSpace();
+                using (Vertical)
+                {
+                    if (!isXRGeneralSettingsPerBuildTargetInitialized())
+                    {
+                        if (GUILayout.Button("Initalize", styleButtonNormal))
+                        {
+                            InitializeXRGeneralSettingsPerBuildTarget();
+                        }
+                    }
+                    else
+                    {
+                        GUI.enabled = false;
+                        GUILayout.Label("OK", styleButtonGreen);
+                        GUI.enabled = true;
+                    }
+                }
+            }
+
+            using (Horizontal)
+            {
+                if (!isXRGeneralSettingsPerBuildTargetInitialized())
+                {
+                    GUI.enabled = false;
+                }
+                using (Vertical)
+                {
+                    GUILayout.Label("Android XR Plug-In Management");
+                }
+                GUILayout.FlexibleSpace();
+                using (Vertical)
+                {
+                    if (!isXRPluginManagementAndroidInitialized())
+                    {
+                        if (GUILayout.Button("Initalize", styleButtonNormal))
+                        {
+                            InitializeAndroidXRSettings();
+                        }
+                    }
+                    else
+                    {
+                        GUI.enabled = false;
+                        GUILayout.Label("OK", styleButtonGreen);
+                        GUI.enabled = true;
+                    }
+                }
+                GUI.enabled = true;
+            }
+
+            if (!isXRPluginManagementAndroidInitialized())
+                GUI.enabled = false;
+
+            GUILayout.Space(5);
+            GUILayout.Label("Plug-In Providers" + (!isXRPluginManagementAndroidInitialized() ? " (Initialize Android Plugin Management)" : ""), styleBold);
+            GUILayout.Space(5);
+
+            bool openXRLoaderFound = false;
+
+            if (isXRPluginManagementAndroidInitialized())
             {
                 foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                 {
                     using (Horizontal)
                     {
-
                         if (loader.name == "OpenXRLoader")
                         {
                             openXRLoaderFound = true;
@@ -365,18 +467,16 @@ namespace Muco
                 {
                     using (Vertical)
                     {
-                        {
-                            GUILayout.Label("OpenXRLoader");
-                        }
+                        GUILayout.Label("OpenXRLoader");
                     }
                     GUILayout.FlexibleSpace();
                     using (Vertical)
                     {
                         if (openXRLoaderFound)
                         {
-                            if (GUILayout.Button("OK", styleButtonGreen))
-                            {
-                            }
+                            GUI.enabled = false;
+                            GUILayout.Label("OK", styleButtonGreen);
+                            GUI.enabled = true;
                         }
                         else
                         {
@@ -391,64 +491,72 @@ namespace Muco
                     }
                 }
             }
-            
 
-            var settings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
+            GUI.enabled = true;
             GUILayout.Space(5);
-            GUILayout.Label("OpenXR Settings",styleBold);
+            GUILayout.Label("OpenXR Settings", styleBold);
             GUILayout.Space(5);
-            using (Horizontal)
+
+            
+            if (cachedXRSettings != null)
             {
-                using (Vertical)
+                using (Horizontal)
                 {
-                    GUILayout.Label("Multipass ON (For Built-in pipeline",styleList);
-                }
-                GUILayout.FlexibleSpace();
-                using (Vertical)
-                {
-                    if (settings.renderMode == OpenXRSettings.RenderMode.MultiPass)
+                    using (Vertical)
                     {
-                        GUILayout.Label("OK", styleButtonGreen);
+                        GUILayout.Label("Multipass ON (For Built-in pipeline", styleList);
                     }
-                    else
+                    GUILayout.FlexibleSpace();
+                    using (Vertical)
                     {
-                        if (GUILayout.Button("Set Render Mode", styleButtonNormal))
+                        if (cachedXRSettings.renderMode == OpenXRSettings.RenderMode.MultiPass)
                         {
-                            settings.renderMode = OpenXRSettings.RenderMode.MultiPass;
+                            GUI.enabled = false;
+                            GUILayout.Label("OK", styleButtonGreen);
+                            GUI.enabled = true;
+                        }
+                        else
+                        {
+                            if (GUILayout.Button("Set Render Mode", styleButtonNormal))
+                            {
+                                cachedXRSettings.renderMode = OpenXRSettings.RenderMode.MultiPass;
+                                lastXRCheck = 0;
+                            }
                         }
                     }
                 }
-                      
-                
-            }
-            using (Horizontal)
-            {
-                using (Vertical)
+
+                using (Horizontal)
                 {
-                    GUILayout.Label("Latency Optimiziation - Prioritize rendering ON",styleList);
-                }
-                GUILayout.FlexibleSpace();
-                using (Vertical)
-                {
-                    if (settings.latencyOptimization == OpenXRSettings.LatencyOptimization.PrioritizeRendering)
+                    using (Vertical)
                     {
-                        GUILayout.Button("OK", styleButtonGreen);
+                        GUILayout.Label("Latency Optimiziation - Prioritize rendering ON", styleList);
                     }
-                    else
+                    GUILayout.FlexibleSpace();
+                    using (Vertical)
                     {
-                        if (GUILayout.Button("Set Latency Optimization", styleButtonNormal))
+                        if (cachedXRSettings.latencyOptimization == OpenXRSettings.LatencyOptimization.PrioritizeRendering)
                         {
-                            settings.latencyOptimization = OpenXRSettings.LatencyOptimization.PrioritizeRendering;
+                            GUI.enabled = false;
+                            GUILayout.Label("OK", styleButtonGreen);
+                            GUI.enabled = true;
+                        }
+                        else
+                        {
+                            if (GUILayout.Button("Set Latency Optimization", styleButtonNormal))
+                            {
+                                cachedXRSettings.latencyOptimization = OpenXRSettings.LatencyOptimization.PrioritizeRendering;
+                                lastXRCheck = 0; 
+                            }
                         }
                     }
                 }
             }
-            
 
+            GUI.enabled = true;
             GUILayout.Space(20);
             GUILayout.Label("Headset Build Check List", styleSubHeader);
             GUILayout.Space(5);
-
             EditorGUI.BeginChangeCheck();
             var options = Enum.GetNames(typeof(XRHeadsetType));
             var _selected = EditorGUILayout.Popup("", (int)selectedXRHeadsetType, options);
@@ -457,15 +565,14 @@ namespace Muco
                 selectedXRHeadsetType = (XRHeadsetType)_selected;
             }
             GUILayout.Space(5);
-            GUILayout.Label("Package",styleBold);
+            GUILayout.Label("Package", styleBold);
             GUILayout.Space(5);
+
             switch (selectedXRHeadsetType)
             {
-
                 case XRHeadsetType.Pico4UltraEnterprise:
                     using (Horizontal)
                     {
-
                         using (Vertical)
                         {
                             GUILayout.Label("Install PicoXR package");
@@ -473,9 +580,11 @@ namespace Muco
                         GUILayout.FlexibleSpace();
                         using (Vertical)
                         {
-                            if (IsPackageInstalled("com.unity.xr.openxr.picoxr"))
+                            if (IsPackageInstalledCached("com.unity.xr.openxr.picoxr"))
                             {
+                                GUI.enabled = false;
                                 GUILayout.Label("OK", styleButtonGreen);
+                                GUI.enabled = true;
                             }
                             else
                             {
@@ -488,81 +597,78 @@ namespace Muco
                     }
                     break;
             }
-            GUILayout.Space(5);
-            GUILayout.Label("Features and Profiles",styleBold);
-            GUILayout.Space(5);
-            if (settings == null)
-            {
-                UnityEngine.Debug.Log($"No OpenXR settings found.");
-                return;
-            }
-            var features = settings.GetFeatures<OpenXRFeature>();
 
-            // check if we want feature
+            GUILayout.Space(5);
+            GUILayout.Label("Features and Profiles", styleBold);
+            GUILayout.Space(5);
 
-            using (Horizontal)
+            if (cachedXRFeatures != null)
             {
-                using (Vertical)
+                using (Horizontal)
                 {
-                    foreach (var feature in features)
+                    using (Vertical)
                     {
-                        if (!OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name) && !feature.enabled)
-                            continue;
-                        GUILayout.Label(feature.name,styleList);
+                        foreach (var feature in cachedXRFeatures)
+                        {
+                            if (!OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name) && !feature.enabled)
+                                continue;
+                            GUILayout.Label(feature.name, styleList);
+                        }
                     }
-
-                }
-                GUILayout.FlexibleSpace();
-                using (Vertical)
-                {
-                    bool anywrongfeatures = false;
-                    foreach (var feature in features)
+                    GUILayout.FlexibleSpace();
+                    using (Vertical)
                     {
-                        var shouldBeEnabled = OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name);
+                        bool anywrongfeatures = false;
+                        foreach (var feature in cachedXRFeatures)
+                        {
+                            var shouldBeEnabled = OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name);
 
-                        if (!shouldBeEnabled && !feature.enabled)
-                            continue;
+                            if (!shouldBeEnabled && !feature.enabled)
+                                continue;
 
-                        if (shouldBeEnabled != feature.enabled)
-                            anywrongfeatures = true;
+                            if (shouldBeEnabled != feature.enabled)
+                                anywrongfeatures = true;
 
-                        if (shouldBeEnabled)
+                            if (shouldBeEnabled)
                             {
                                 if (feature.enabled)
                                 {
-                                    GUILayout.Button("OK", styleButtonGreen);
+                                    GUI.enabled = false;
+                                    GUILayout.Label("OK", styleButtonGreen);
+                                    GUI.enabled = true;
                                 }
                                 else
                                 {
                                     if (GUILayout.Button("Enable feature", styleButtonNormal))
                                     {
                                         feature.enabled = true;
-                                        EditorUtility.SetDirty(settings);
+                                        EditorUtility.SetDirty(cachedXRSettings);
+                                        lastXRCheck = 0; 
                                     }
                                 }
                             }
                             else
                             {
+                                if (GUILayout.Button("Disable feature", styleButtonRed))
                                 {
-                                    if (GUILayout.Button("Disable feature", styleButtonRed))
-                                    {
-                                        feature.enabled = false;
-                                        EditorUtility.SetDirty(settings);
-                                    }
+                                    feature.enabled = false;
+                                    EditorUtility.SetDirty(cachedXRSettings);
+                                    lastXRCheck = 0; 
                                 }
                             }
-
-                    }
-                    if (anywrongfeatures)
-                    {
-                        if (GUILayout.Button("Set All Features", styleButtonNormal))
+                        }
+                        if (anywrongfeatures)
                         {
-                            EnableAppropriateFeatures();
+                            if (GUILayout.Button("Set All Features", styleButtonNormal))
+                            {
+                                EnableAppropriateFeatures();
+                                lastXRCheck = 0; 
+                            }
                         }
                     }
-                    
                 }
             }
+
             EditorGUILayout.EndScrollView();
         }
 
@@ -575,46 +681,57 @@ namespace Muco
         }
 
         public static XRGeneralSettings xRGeneralSettings;
-
         public static XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
 
-        bool xrLoaded = false;
-
-        private void LoadXR()
+        // ... All the other methods stay exactly the same ...
+        public static bool isXRGeneralSettingsPerBuildTargetInitialized()
         {
-            if (xrLoaded)
-                return;
-            buildTargetSettingsPerBuildTarget = null;
-            EditorBuildSettings.TryGetConfigObject(XRGeneralSettings.k_SettingsKey, out buildTargetSettingsPerBuildTarget);
+            var i = AssetDatabase.FindAssets("BuildTargetSettings");
+            if (i != null)
+                return i.Length > 0;
+            return false;
+        }
+
+        public static bool isXRPluginManagementAndroidInitialized()
+        {
+            buildTargetSettingsPerBuildTarget = (XRGeneralSettingsPerBuildTarget)AssetDatabase.LoadAssetAtPath("Assets/XR/BuildTargetSettings.asset", typeof(XRGeneralSettingsPerBuildTarget));
             if (buildTargetSettingsPerBuildTarget == null)
-                    InitializeXRGeneralSettingsPerBuildTarget();
+                return false;
             xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
-            if (xRGeneralSettings == null)
-                InitializeAndroidXRSettings();
-            xrLoaded = true;
+            return xRGeneralSettings != null;
         }
 
         public static void InitializeXRGeneralSettingsPerBuildTarget()
         {
+            buildTargetSettingsPerBuildTarget = null;
             buildTargetSettingsPerBuildTarget = ScriptableObject.CreateInstance<XRGeneralSettingsPerBuildTarget>();
+            AssetDatabase.CreateAsset(buildTargetSettingsPerBuildTarget, "Assets/XR/BuildTargetSettings.asset");
+            xRGeneralSettings = ScriptableObject.CreateInstance<XRGeneralSettings>();
+            XRManagerSettings manager = ScriptableObject.CreateInstance<XRManagerSettings>();
+            xRGeneralSettings.AssignedSettings = manager;
+            AssetDatabase.AddObjectToAsset(xRGeneralSettings, buildTargetSettingsPerBuildTarget);
+            AssetDatabase.AddObjectToAsset(manager, buildTargetSettingsPerBuildTarget);
+            buildTargetSettingsPerBuildTarget.SetSettingsForBuildTarget(BuildTargetGroup.Standalone, xRGeneralSettings);
+            EditorUtility.SetDirty(buildTargetSettingsPerBuildTarget);
+            AssetDatabase.SaveAssets();
         }
 
         public static void InitializeAndroidXRSettings()
         {
-
+            xRGeneralSettings = null;
             xRGeneralSettings = ScriptableObject.CreateInstance<XRGeneralSettings>();
             XRManagerSettings manager = ScriptableObject.CreateInstance<XRManagerSettings>();
             xRGeneralSettings.AssignedSettings = manager;
-
+            buildTargetSettingsPerBuildTarget = (XRGeneralSettingsPerBuildTarget)AssetDatabase.LoadAssetAtPath("Assets/XR/BuildTargetSettings.asset", typeof(XRGeneralSettingsPerBuildTarget));
             AssetDatabase.AddObjectToAsset(xRGeneralSettings, buildTargetSettingsPerBuildTarget);
             AssetDatabase.AddObjectToAsset(manager, buildTargetSettingsPerBuildTarget);
-
             buildTargetSettingsPerBuildTarget.SetSettingsForBuildTarget(BuildTargetGroup.Android, xRGeneralSettings);
-
             EditorUtility.SetDirty(buildTargetSettingsPerBuildTarget);
             AssetDatabase.SaveAssets();
         }
-        public static bool IsPackageInstalled(string packageId)
+
+        
+        public static bool IsPackageInstalledDirect(string packageId)
         {
             if (!File.Exists("Packages/manifest.json"))
                 return false;
@@ -622,11 +739,18 @@ namespace Muco
             return jsonText.Contains("\"" + packageId + "\"");
         }
 
-        public static bool AreAllPAckagesInstalled(Dictionary<string, string> packages)
+        
+        public static bool IsPackageInstalled(string packageId)
+        {
+            return GetWindow<MUCOSetup>().IsPackageInstalledCached(packageId);
+        }
+
+        
+        public bool AreAllPackagesInstalledCached(Dictionary<string, string> packages)
         {
             foreach (KeyValuePair<string, string> kvp in packages)
             {
-                if (!IsPackageInstalled(kvp.Key))
+                if (!IsPackageInstalledCached(kvp.Key))
                 {
                     return false;
                 }
@@ -634,11 +758,16 @@ namespace Muco
             return true;
         }
 
+        public static bool AreAllPAckagesInstalled(Dictionary<string, string> packages)
+        {
+            return GetWindow<MUCOSetup>().AreAllPackagesInstalledCached(packages);
+        }
+
         static void AddPackages(Dictionary<string, string> packages)
         {
             foreach (KeyValuePair<string, string> kvp in packages)
             {
-                if (!IsPackageInstalled(kvp.Key))
+                if (!IsPackageInstalledDirect(kvp.Key)) 
                     AddPackage(kvp.Key + "@" + kvp.Value);
             }
         }
@@ -647,6 +776,9 @@ namespace Muco
         static void AddPackage(string name)
         {
             Request = Client.Add(name);
+            
+            var window = GetWindow<MUCOSetup>();
+            window.lastPackageCheck = 0; 
         }
 
         private static void SetAndroidTextureCompressionToASTC()
@@ -665,15 +797,12 @@ namespace Muco
         private void Reload()
         {
             var type = Assembly.Load(new AssemblyName("Unity.XR.Management.Editor")).GetType($"UnityEditor.XR.Management.XRManagerSettingsEditor");
-
             if (type == null) return;
 
             var xrManagerSettingsEditorInstance = Resources.FindObjectsOfTypeAll<UnityEditor.Editor>().FirstOrDefault(obj => obj.GetType() == type);
-
             if (xrManagerSettingsEditorInstance == null) return;
 
             var reloadMethod = type.GetMethod("Reload", BindingFlags.Public | BindingFlags.Instance);
-
             if (reloadMethod != null)
             {
                 reloadMethod.Invoke(xrManagerSettingsEditorInstance, null);
@@ -710,23 +839,23 @@ namespace Muco
 
         private void EnableAppropriateFeatures()
         {
-            var settings = OpenXRSettings.GetSettingsForBuildTargetGroup(BuildTargetGroup.Android);
-            if (settings == null)
+            if (cachedXRSettings == null)
             {
                 UnityEngine.Debug.Log($"No OpenXR settings found.");
                 return;
             }
 
-            var features = settings.GetFeatures<OpenXRFeature>();
             Debug.Log(selectedXRHeadsetType);
-            foreach (var feature in features)
+            if (cachedXRFeatures != null)
             {
-                UnityEngine.Debug.Log(feature.GetType().Name + " " + feature.enabled);
-                var shouldBeEnabled = OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name);
-                feature.enabled = shouldBeEnabled;
+                foreach (var feature in cachedXRFeatures)
+                {
+                    UnityEngine.Debug.Log(feature.GetType().Name + " " + feature.enabled);
+                    var shouldBeEnabled = OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name);
+                    feature.enabled = shouldBeEnabled;
+                }
+                EditorUtility.SetDirty(cachedXRSettings);
             }
-            EditorUtility.SetDirty(settings);
         }
-
     }
 }
