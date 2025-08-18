@@ -313,7 +313,8 @@ namespace Muco
             GUILayout.Label("Plug-In Providers",styleBold);
             GUILayout.Space(5);
             bool openXRLoaderFound = false;
-            if (xRGeneralSettings != null && xRGeneralSettings.Manager != null)
+
+            if (xrLoaded)
             {
                 foreach (XRLoader loader in xRGeneralSettings.Manager.activeLoaders)
                 {
@@ -558,6 +559,7 @@ namespace Muco
         XRGeneralSettings xRGeneralSettings;
 
         bool xrLoaded = false;
+
         private void LoadXR()
         {
             if (xrLoaded)
@@ -568,8 +570,39 @@ namespace Muco
                 return;
             xRGeneralSettings = buildTargetSettingsPerBuildTarget.SettingsForBuildTarget(BuildTargetGroup.Android);
             if (xRGeneralSettings == null)
-                return;
+                InitializeAndroidXRSettings();
             xrLoaded = true;
+        }
+
+        public static void InitializeAndroidXRSettings()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:XRGeneralSettingsPerBuildTarget");
+            if (guids.Length == 0)
+            {
+                return;
+            }
+
+            string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+            XRGeneralSettingsPerBuildTarget buildTargetSettings =
+                AssetDatabase.LoadAssetAtPath<XRGeneralSettingsPerBuildTarget>(path);
+
+            var existing = buildTargetSettings.SettingsForBuildTarget(BuildTargetGroup.Android);
+            if (existing != null)
+            {
+                return;
+            }
+
+            XRGeneralSettings androidSettings = ScriptableObject.CreateInstance<XRGeneralSettings>();
+            XRManagerSettings manager = ScriptableObject.CreateInstance<XRManagerSettings>();
+            androidSettings.AssignedSettings = manager;
+
+            AssetDatabase.AddObjectToAsset(androidSettings, buildTargetSettings);
+            AssetDatabase.AddObjectToAsset(manager, buildTargetSettings);
+
+            buildTargetSettings.SetSettingsForBuildTarget(BuildTargetGroup.Android, androidSettings);
+
+            EditorUtility.SetDirty(buildTargetSettings);
+            AssetDatabase.SaveAssets();
         }
         public static bool IsPackageInstalled(string packageId)
         {
