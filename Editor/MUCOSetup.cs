@@ -62,8 +62,14 @@ namespace Muco
         [MenuItem("MUCO/Setup")]
         public static void ShowWindow()
         {
-            MUCOSetup mucoSetup = GetWindow<MUCOSetup>("MUCO Setup");
+            var window = (MUCOSetup)EditorWindow.GetWindow(typeof(MUCOSetup), false, "MUCO Setup");
         }
+
+        static void Initialize()
+        { 
+            ShowWindow();
+        }
+
 
         Dictionary<string, string> packages = new Dictionary<string, string> {
             { "com.antilatency.sdk", "https://github.com/AntilatencySDK/Release_4.5.0.git#subset-9981b5a2f659d60c5c83913dabf63caeec6c76a7" },
@@ -82,6 +88,15 @@ namespace Muco
         private double lastXRCheck = 0;
         private const double XR_CHECK_INTERVAL = 1.0; 
 
+        GUIStyle styleButtonNormal;
+        GUIStyle styleButtonRed;
+        GUIStyle styleButtonGreen;
+
+        GUIStyle styleLabelRed;
+        GUIStyle styleHeader;
+        GUIStyle styleSubHeader;
+        GUIStyle styleBold;
+        GUIStyle styleList;
         void Init()
         {
             if (isInitialized)
@@ -94,33 +109,12 @@ namespace Muco
             styleButtonNormal = new GUIStyle(GUI.skin.button);
             styleButtonRed = new GUIStyle(GUI.skin.button);
             styleButtonGreen = new GUIStyle(GUI.skin.button);
-            styleButtonNormal.fixedWidth = 200;
-
-            styleButtonRed.normal.textColor = Color.red;
-            styleButtonRed.fixedWidth = 200;
-
-            styleButtonGreen.normal.textColor = Color.green;
-            styleButtonGreen.fixedWidth = 200;
-
-            styleLabelRed.normal.textColor = Color.red;
-            styleLabelRed.padding = new RectOffset(6, 3, 3, 3);
-
-            styleHeader.fontSize = 20;
-            styleHeader.fontStyle = FontStyle.Bold;
-            styleHeader.normal.textColor = Color.white;
-            styleHeader.padding = new RectOffset(0, 5, 7, 5);
-
-            styleSubHeader.fontSize = 15;
-            styleSubHeader.fontStyle = FontStyle.Bold;
-            styleSubHeader.normal.textColor = Color.gray;
-            styleSubHeader.padding = new RectOffset(6, 0, 0, 0);
-
-            styleBold.fontStyle = FontStyle.Bold;
-            styleBold.padding = new RectOffset(6, 0, 0, 0);
-            styleBold.normal.textColor = Color.gray;
-
-            styleList.normal.textColor = EditorStyles.label.normal.textColor;
-            styleList.padding = new RectOffset(6, 3, 3, 3);
+            styleLabelRed = new GUIStyle();
+            styleHeader = new GUIStyle();
+            styleSubHeader = new GUIStyle();
+            styleBold = new GUIStyle();
+            styleList = new GUIStyle();
+            
 
             ShowWindow();
             isInitialized = true;
@@ -146,14 +140,6 @@ namespace Muco
 
         Vector2 scrollPos = Vector2.zero;
 
-        GUIStyle styleButtonNormal;
-        GUIStyle styleButtonRed;
-        GUIStyle styleButtonGreen;
-        GUIStyle styleLabelRed = new GUIStyle();
-        GUIStyle styleHeader = new GUIStyle();
-        GUIStyle styleSubHeader = new GUIStyle();
-        GUIStyle styleBold = new GUIStyle();
-        GUIStyle styleList = new GUIStyle();
 
         private void UpdatePackageStatusCache()
         {
@@ -193,6 +179,36 @@ namespace Muco
         {
             UpdatePackageStatusCache();
             UpdateXRSettingsCache();
+
+            
+            
+            styleButtonNormal.fixedWidth = 200;
+
+            styleButtonRed.normal.textColor = Color.red;
+            styleButtonRed.fixedWidth = 200;
+
+            styleButtonGreen.normal.textColor = Color.green;
+            styleButtonGreen.fixedWidth = 200;
+
+            styleLabelRed.normal.textColor = Color.red;
+            styleLabelRed.padding = new RectOffset(6, 3, 3, 3);
+
+            styleHeader.fontSize = 20;
+            styleHeader.fontStyle = FontStyle.Bold;
+            styleHeader.normal.textColor = Color.white;
+            styleHeader.padding = new RectOffset(0, 5, 7, 5);
+
+            styleSubHeader.fontSize = 15;
+            styleSubHeader.fontStyle = FontStyle.Bold;
+            styleSubHeader.normal.textColor = Color.gray;
+            styleSubHeader.padding = new RectOffset(6, 0, 0, 0);
+
+            styleBold.fontStyle = FontStyle.Bold;
+            styleBold.padding = new RectOffset(6, 0, 0, 0);
+            styleBold.normal.textColor = Color.gray;
+
+            styleList.normal.textColor = EditorStyles.label.normal.textColor;
+            styleList.padding = new RectOffset(6, 3, 3, 3);
 
             var lineHeight = 19;
             var biggerLineHeight = new GUILayoutOption[] { GUILayout.Height(lineHeight) };
