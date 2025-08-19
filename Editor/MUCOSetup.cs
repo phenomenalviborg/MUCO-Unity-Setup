@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Linq;
 using UnityEngine.XR.OpenXR;
 using UnityEngine.XR.OpenXR.Features;
+using UnityEngine.Assertions;
 
 namespace Muco
 {
@@ -59,11 +60,25 @@ namespace Muco
         GUILayoutHelper Horizontal => new GUILayoutHelper(GUILayoutHelper.Orientation.Horizontal);
         GUILayoutHelper Vertical => new GUILayoutHelper(GUILayoutHelper.Orientation.Vertical);
 
+        private const string PrefKey = "MUCOSetupShown";
+
         [MenuItem("MUCO/Setup")]
         public static void ShowWindow()
         {
-            var window = (MUCOSetup)EditorWindow.GetWindow(typeof(MUCOSetup), false, "MUCO Setup");
-            window.Show();
+            GetWindow<MUCOSetup>("MUCO Setup");
+        }
+
+        [InitializeOnLoadMethod]
+        private static void InitOnLoad()
+        {
+            if (!EditorPrefs.GetBool(PrefKey, false))
+            {
+                EditorApplication.delayCall += () =>
+                {
+                    ShowWindow();
+                    EditorPrefs.SetBool(PrefKey, true);
+                };
+            }
         }
 
 
@@ -73,7 +88,7 @@ namespace Muco
             { "com.phenomenalviborg.muco","https://github.com/phenomenalviborg/MUCO-Unity.git" }
         };
 
-        bool isInitialized;
+        
 
         private Dictionary<string, bool> packageStatusCache = new Dictionary<string, bool>();
         private double lastPackageCheck = 0;
@@ -93,8 +108,12 @@ namespace Muco
         GUIStyle styleSubHeader;
         GUIStyle styleBold;
         GUIStyle styleList;
+        
+        bool isInitialized;
         void Init()
         {
+            Assert.IsNotNull(Event.current, "Init() must be called from OnGUI");
+            
             if (isInitialized)
                 return;
 
@@ -110,20 +129,35 @@ namespace Muco
             styleSubHeader = new GUIStyle();
             styleBold = new GUIStyle();
             styleList = new GUIStyle();
-            
+            styleButtonNormal.fixedWidth = 200;
 
-            ShowWindow();
+            styleButtonRed.normal.textColor = Color.red;
+            styleButtonRed.fixedWidth = 200;
+
+            styleButtonGreen.normal.textColor = Color.green;
+            styleButtonGreen.fixedWidth = 200;
+
+            styleLabelRed.normal.textColor = Color.red;
+            styleLabelRed.padding = new RectOffset(6, 3, 3, 3);
+
+            styleHeader.fontSize = 20;
+            styleHeader.fontStyle = FontStyle.Bold;
+            styleHeader.normal.textColor = Color.white;
+            styleHeader.padding = new RectOffset(0, 5, 7, 5);
+
+            styleSubHeader.fontSize = 15;
+            styleSubHeader.fontStyle = FontStyle.Bold;
+            styleSubHeader.normal.textColor = Color.gray;
+            styleSubHeader.padding = new RectOffset(6, 0, 0, 0);
+
+            styleBold.fontStyle = FontStyle.Bold;
+            styleBold.padding = new RectOffset(6, 0, 0, 0);
+            styleBold.normal.textColor = Color.gray;
+
+            styleList.normal.textColor = EditorStyles.label.normal.textColor;
+            styleList.padding = new RectOffset(6, 3, 3, 3);
+
             isInitialized = true;
-        }
-
-        void Awake()
-        {
-            Init();
-        }
-
-        void OnValidate()
-        {
-            Init();
         }
 
         Texture2D logo;
@@ -135,7 +169,6 @@ namespace Muco
         }
 
         Vector2 scrollPos = Vector2.zero;
-
 
         private void UpdatePackageStatusCache()
         {
@@ -175,36 +208,7 @@ namespace Muco
         {
             UpdatePackageStatusCache();
             UpdateXRSettingsCache();
-
-            
-            
-            styleButtonNormal.fixedWidth = 200;
-
-            styleButtonRed.normal.textColor = Color.red;
-            styleButtonRed.fixedWidth = 200;
-
-            styleButtonGreen.normal.textColor = Color.green;
-            styleButtonGreen.fixedWidth = 200;
-
-            styleLabelRed.normal.textColor = Color.red;
-            styleLabelRed.padding = new RectOffset(6, 3, 3, 3);
-
-            styleHeader.fontSize = 20;
-            styleHeader.fontStyle = FontStyle.Bold;
-            styleHeader.normal.textColor = Color.white;
-            styleHeader.padding = new RectOffset(0, 5, 7, 5);
-
-            styleSubHeader.fontSize = 15;
-            styleSubHeader.fontStyle = FontStyle.Bold;
-            styleSubHeader.normal.textColor = Color.gray;
-            styleSubHeader.padding = new RectOffset(6, 0, 0, 0);
-
-            styleBold.fontStyle = FontStyle.Bold;
-            styleBold.padding = new RectOffset(6, 0, 0, 0);
-            styleBold.normal.textColor = Color.gray;
-
-            styleList.normal.textColor = EditorStyles.label.normal.textColor;
-            styleList.padding = new RectOffset(6, 3, 3, 3);
+            Init();
 
             var lineHeight = 19;
             var biggerLineHeight = new GUILayoutOption[] { GUILayout.Height(lineHeight) };
