@@ -63,11 +63,7 @@ namespace Muco
         public static void ShowWindow()
         {
             var window = (MUCOSetup)EditorWindow.GetWindow(typeof(MUCOSetup), false, "MUCO Setup");
-        }
-
-        static void Initialize()
-        { 
-            ShowWindow();
+            window.Show();
         }
 
 
