@@ -174,7 +174,6 @@ namespace Muco
         {
             if (EditorApplication.timeSinceStartup - lastPackageCheck > PACKAGE_CHECK_INTERVAL)
             {
-                var oldCache = new Dictionary<string, bool>(packageStatusCache);
                 packageStatusCache.Clear();
                 foreach (var kvp in packages)
                 {
@@ -182,11 +181,7 @@ namespace Muco
                 }
                 packageStatusCache["com.unity.xr.openxr.picoxr"] = IsPackageInstalledDirect("com.unity.xr.openxr.picoxr");
                 lastPackageCheck = EditorApplication.timeSinceStartup;
-                if (!DictionariesEqual(oldCache, packageStatusCache))
-                {
-                    Repaint();
-                }
-
+                Repaint();
             }
         }
 
