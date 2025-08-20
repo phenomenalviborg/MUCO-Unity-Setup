@@ -383,7 +383,7 @@ namespace Muco
 
             
             GUILayout.Space(20);
-            GUILayout.Label("Project Settings ->  XR Plug-in Management -> Android Tab", styleSubHeader);
+            GUILayout.Label("Project Settings ->  XR Plug-in Management (Android Tab)", styleSubHeader);
             GUILayout.Space(5);
             GUILayout.Label("Plug-In Management", styleBold);
             GUILayout.Space(5);
@@ -399,7 +399,7 @@ namespace Muco
                 {
                     if (!isXRGeneralSettingsPerBuildTargetInitialized())
                     {
-                        if (GUILayout.Button("Initalize", styleButtonNormal))
+                        if (GUILayout.Button("Initialize", styleButtonNormal))
                         {
                             InitializeXRGeneralSettingsPerBuildTarget();
                         }
@@ -428,7 +428,7 @@ namespace Muco
                 {
                     if (!isXRPluginManagementAndroidInitialized())
                     {
-                        if (GUILayout.Button("Initalize", styleButtonNormal))
+                        if (GUILayout.Button("Initialize", styleButtonNormal))
                         {
                             InitializeAndroidXRSettings();
                         }
@@ -510,7 +510,7 @@ namespace Muco
 
             GUI.enabled = true;
             GUILayout.Space(5);
-            GUILayout.Label("OpenXR Settings", styleBold);
+            GUILayout.Label("OpenXR Settings - (Android Tab)", styleBold);
             GUILayout.Space(5);
 
             
@@ -684,7 +684,7 @@ namespace Muco
                     }
                 }
             }
-
+            GUILayout.Space(10);
             EditorGUILayout.EndScrollView();
         }
 
