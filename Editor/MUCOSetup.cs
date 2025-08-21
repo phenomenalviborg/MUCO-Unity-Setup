@@ -383,7 +383,7 @@ namespace Muco
 
             
             GUILayout.Space(20);
-            GUILayout.Label("Project Settings ->  XR Plug-in Management (Android Tab)", styleSubHeader);
+            GUILayout.Label("Project Settings ->  XR Plug-in Management <color=#008000ff>(Android Tab)</color>", styleSubHeader);
             GUILayout.Space(5);
             GUILayout.Label("Plug-In Management", styleBold);
             GUILayout.Space(5);
@@ -510,9 +510,8 @@ namespace Muco
 
             GUI.enabled = true;
             GUILayout.Space(5);
-            GUILayout.Label("OpenXR Settings - (Android Tab)", styleBold);
+            GUILayout.Label("OpenXR Settings <color=#008000ff>(Android Tab)</color>", styleBold);
             GUILayout.Space(5);
-
             
             if (cachedXRSettings != null)
             {
