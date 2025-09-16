@@ -687,7 +687,19 @@ namespace Muco
             EditorGUILayout.EndScrollView();
         }
 
-        XRHeadsetType selectedXRHeadsetType;
+        private const string HeadsetTypePrefKey = "MUCOSetup_SelectedHeadsetType";
+
+        XRHeadsetType SelectedXRHeadsetType
+        {
+            get { return (XRHeadsetType)EditorPrefs.GetInt(HeadsetTypePrefKey, 0); }
+            set { EditorPrefs.SetInt(HeadsetTypePrefKey, (int)value); }
+        }
+
+        XRHeadsetType selectedXRHeadsetType
+        {
+            get { return SelectedXRHeadsetType; }
+            set { SelectedXRHeadsetType = value; }
+        }
 
         enum XRHeadsetType
         {
