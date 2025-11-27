@@ -561,7 +561,7 @@ namespace Muco
                             if (GUILayout.Button("Set Latency Optimization", styleButtonNormal))
                             {
                                 cachedXRSettings.latencyOptimization = OpenXRSettings.LatencyOptimization.PrioritizeRendering;
-                                lastXRCheck = 0; 
+                                lastXRCheck = 0;
                             }
                         }
                     }
@@ -617,6 +617,8 @@ namespace Muco
             GUILayout.Label("Features and Profiles", styleBold);
             GUILayout.Space(5);
 
+            var picoConfig = GetPicoProjectConfig();
+
             if (cachedXRFeatures != null)
             {
                 using (Horizontal)
@@ -628,6 +630,11 @@ namespace Muco
                             if (!OpenXRFeatureShouldBeEnabled(selectedXRHeadsetType, feature.GetType().Name) && !feature.enabled)
                                 continue;
                             GUILayout.Label(feature.name, styleList);
+                        }
+                        
+                        if (picoConfig != null)
+                        {
+                            GUILayout.Label("Pico Support -> Settings (Gear Icon) -> Hand Tracking Enabled", styleList);
                         }
                     }
                     GUILayout.FlexibleSpace();
@@ -672,17 +679,50 @@ namespace Muco
                                 }
                             }
                         }
-                        if (anywrongfeatures)
+                        
+                        if (picoConfig != null)
                         {
-                            if (GUILayout.Button("Set All Features", styleButtonNormal))
+                            
+                                
+                                
+                                    bool isHandTrackingEnabled = (bool)picoConfig.GetType().GetField("isHandTracking").GetValue(picoConfig);
+                                    if (isHandTrackingEnabled)
+                                    {
+                                        GUI.enabled = false;
+                                        GUILayout.Label("OK", styleButtonGreen);
+                                        GUI.enabled = true;
+                                    }
+                                    else
+                                    {
+                                        if (GUILayout.Button("Enable Hand Tracking", styleButtonNormal))
+                                        {
+                                            picoConfig.GetType().GetField("isHandTracking").SetValue(picoConfig, true);
+                                            EditorUtility.SetDirty(picoConfig);
+                                            AssetDatabase.SaveAssets();
+                                        }
+                                    }
+                                
+                        }
+                        bool picoSettingsNeedUpdate = IsPicoHandTrackingNeeded();
+                        if (anywrongfeatures || picoSettingsNeedUpdate)
+                        {
+                            if (GUILayout.Button("Set All Features and Settings", styleButtonNormal))
                             {
                                 EnableAppropriateFeatures();
-                                lastXRCheck = 0; 
+                                EnableAppropriatePicoSettings();
+                                lastXRCheck = 0;
                             }
                         }
                     }
                 }
             }
+
+            // Pico Hand Tracking setting (only show when Pico headset is selected)
+            if (selectedXRHeadsetType == XRHeadsetType.Pico4UltraEnterprise && IsPackageInstalledCached("com.unity.xr.openxr.picoxr"))
+            {
+                
+            }
+
             GUILayout.Space(10);
             EditorGUILayout.EndScrollView();
         }
@@ -883,6 +923,58 @@ namespace Muco
                 }
                 EditorUtility.SetDirty(cachedXRSettings);
             }
+        }
+
+        private ScriptableObject GetPicoProjectConfig()
+        {
+            // Use reflection to access PICOProjectSetting.GetProjectConfig() without direct dependency
+            var picoSettingType = Type.GetType("Unity.XR.OpenXR.Features.PICOSupport.PICOProjectSetting, Unity.XR.OpenXR.Features.PICOSupport");
+            if (picoSettingType == null)
+                return null;
+
+            var getConfigMethod = picoSettingType.GetMethod("GetProjectConfig", BindingFlags.Public | BindingFlags.Static);
+            if (getConfigMethod == null)
+                return null;
+
+            return getConfigMethod.Invoke(null, null) as ScriptableObject;
+        }
+
+        private void EnableAppropriatePicoSettings()
+        {
+            if (selectedXRHeadsetType != XRHeadsetType.Pico4UltraEnterprise)
+                return;
+
+            var picoConfig = GetPicoProjectConfig();
+            if (picoConfig == null)
+                return;
+
+            var handTrackingField = picoConfig.GetType().GetField("isHandTracking");
+            if (handTrackingField != null)
+            {
+                handTrackingField.SetValue(picoConfig, true);
+                EditorUtility.SetDirty(picoConfig);
+                AssetDatabase.SaveAssets();
+            }
+        }
+
+        private bool IsPicoHandTrackingNeeded()
+        {
+            if (selectedXRHeadsetType != XRHeadsetType.Pico4UltraEnterprise)
+                return false;
+
+            if (!IsPackageInstalledCached("com.unity.xr.openxr.picoxr"))
+                return false;
+
+            var picoConfig = GetPicoProjectConfig();
+            if (picoConfig == null)
+                return false;
+
+            var handTrackingField = picoConfig.GetType().GetField("isHandTracking");
+            if (handTrackingField == null)
+                return false;
+
+            bool isEnabled = (bool)handTrackingField.GetValue(picoConfig);
+            return !isEnabled;
         }
     }
 }
