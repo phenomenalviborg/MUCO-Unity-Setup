@@ -108,6 +108,7 @@ namespace Muco
         GUIStyle styleSubHeader;
         GUIStyle styleBold;
         GUIStyle styleList;
+        GUIStyle styleLink;
         
         bool isInitialized;
         void Init()
@@ -156,6 +157,10 @@ namespace Muco
 
             styleList.normal.textColor = EditorStyles.label.normal.textColor;
             styleList.padding = new RectOffset(6, 3, 3, 3);
+
+            styleLink = new GUIStyle(EditorStyles.linkLabel);
+            styleLink.padding = new RectOffset(-6, -6, 1,0);
+            
 
             isInitialized = true;
         }
@@ -634,7 +639,15 @@ namespace Muco
                         
                         if (picoConfig != null)
                         {
-                            GUILayout.Label("Pico Support -> Settings (Gear Icon) -> Hand Tracking Enabled", styleList);
+                            using (Horizontal)
+                            {
+                                GUILayout.Label("Pico Support -> ", styleList);
+                                if (GUILayout.Button("Settings", styleLink))
+                                {
+                                    OpenPicoFeatureSettings();
+                                }
+                                GUILayout.Label("-> Hand Tracking", styleList);
+                            }
                         }
                     }
                     GUILayout.FlexibleSpace();
@@ -975,6 +988,19 @@ namespace Muco
 
             bool isEnabled = (bool)handTrackingField.GetValue(picoConfig);
             return !isEnabled;
+        }
+
+        private void OpenPicoFeatureSettings()
+        {
+            // Select the PICOProjectSetting asset to show its settings in the inspector
+            var picoConfig = GetPicoProjectConfig();
+            if (picoConfig != null)
+            {
+                Selection.activeObject = picoConfig;
+                EditorGUIUtility.PingObject(picoConfig);
+                // Open the Inspector window to show the settings
+                EditorApplication.ExecuteMenuItem("Window/General/Inspector");
+            }
         }
     }
 }
