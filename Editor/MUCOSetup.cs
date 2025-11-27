@@ -158,8 +158,11 @@ namespace Muco
             styleList.normal.textColor = EditorStyles.label.normal.textColor;
             styleList.padding = new RectOffset(6, 3, 3, 3);
 
-            styleLink = new GUIStyle(EditorStyles.linkLabel);
+            styleLink = EditorStyles.linkLabel != null
+                ? new GUIStyle(EditorStyles.linkLabel)
+                : new GUIStyle(GUI.skin.label);
             styleLink.padding = new RectOffset(-6, -6, 1,0);
+            styleLink.normal.textColor = new Color(0.3f, 0.5f, 1f);
             
 
             isInitialized = true;
@@ -211,9 +214,13 @@ namespace Muco
 
         private void OnGUI()
         {
+            Init();
+
+            if (!isInitialized)
+                return;
+
             UpdatePackageStatusCache();
             UpdateXRSettingsCache();
-            Init();
 
             var lineHeight = 19;
             var biggerLineHeight = new GUILayoutOption[] { GUILayout.Height(lineHeight) };
