@@ -1,4 +1,6 @@
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.Requests;
@@ -61,6 +63,7 @@ namespace Muco
         GUILayoutHelper Vertical => new GUILayoutHelper(GUILayoutHelper.Orientation.Vertical);
 
         private const string PrefKey = "MUCOSetupShown";
+        private const string BuildVersionPrefKey = "MUCOSetup_BuildVersion";
 
         [MenuItem("MUCO/Setup")]
         public static void ShowWindow()
@@ -98,6 +101,9 @@ namespace Muco
         private OpenXRFeature[] cachedXRFeatures;
         private double lastXRCheck = 0;
         private const double XR_CHECK_INTERVAL = 1.0; 
+
+
+        private bool setBuildNameToHeadsetType;
 
         GUIStyle styleButtonNormal;
         GUIStyle styleButtonRed;
@@ -740,7 +746,37 @@ namespace Muco
             // Pico Hand Tracking setting (only show when Pico headset is selected)
             if (selectedXRHeadsetType == XRHeadsetType.Pico4UltraEnterprise && IsPackageInstalledCached("com.unity.xr.openxr.picoxr"))
             {
-                
+
+            }
+
+            GUILayout.Space(20);
+            GUILayout.Label("Options", styleSubHeader);
+            GUILayout.Space(5);
+
+            using (Horizontal)
+            {
+                using (Vertical)
+                {
+                    GUILayout.Label("Set build version to selected headset type.", styleList);
+                }
+                GUILayout.FlexibleSpace();
+                using (Vertical)
+                {
+                    string savedVersion = EditorPrefs.GetString(BuildVersionPrefKey, PlayerSettings.bundleVersion);
+                    //string newVersion = EditorGUILayout.TextField(savedVersion, GUILayout.Width(200));
+                    
+                    setBuildNameToHeadsetType = EditorGUILayout.Toggle(setBuildNameToHeadsetType);
+                    if (setBuildNameToHeadsetType)
+                    {
+                        string newVersion = selectedXRHeadsetType.ToString();
+                        if (newVersion != savedVersion)
+                        {
+                            EditorPrefs.SetString(BuildVersionPrefKey, newVersion);
+                            PlayerSettings.bundleVersion = newVersion;
+                        }
+                    }
+                    
+                }
             }
 
             GUILayout.Space(10);
@@ -770,7 +806,6 @@ namespace Muco
         public static XRGeneralSettings xRGeneralSettings;
         public static XRGeneralSettingsPerBuildTarget buildTargetSettingsPerBuildTarget;
 
-        // ... All the other methods stay exactly the same ...
         public static bool isXRGeneralSettingsPerBuildTargetInitialized()
         {
             var i = AssetDatabase.FindAssets("BuildTargetSettings");
@@ -1007,6 +1042,23 @@ namespace Muco
                 EditorGUIUtility.PingObject(picoConfig);
                 // Open the Inspector window to show the settings
                 EditorApplication.ExecuteMenuItem("Window/General/Inspector");
+            }
+        }
+    }
+
+    public class MUCOBuildVersionPreprocessor : IPreprocessBuildWithReport
+    {
+        private const string BuildVersionPrefKey = "MUCOSetup_BuildVersion";
+
+        public int callbackOrder => -10; // Run early, before other preprocessors
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            string savedVersion = EditorPrefs.GetString(BuildVersionPrefKey, "");
+            if (!string.IsNullOrEmpty(savedVersion))
+            {
+                PlayerSettings.bundleVersion = savedVersion;
+                Debug.Log($"MUCO: Set build version to {savedVersion}");
             }
         }
     }
