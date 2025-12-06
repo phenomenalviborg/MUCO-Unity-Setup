@@ -64,6 +64,7 @@ namespace Muco
 
         private const string PrefKey = "MUCOSetupShown";
         private const string BuildVersionPrefKey = "MUCOSetup_BuildVersion";
+        private string _multiLevelAccessToken = "";
 
         [MenuItem("MUCO/Setup")]
         public static void ShowWindow()
@@ -115,6 +116,7 @@ namespace Muco
         GUIStyle styleBold;
         GUIStyle styleList;
         GUIStyle styleLink;
+        GUIStyle styleTextField;
         
         bool isInitialized;
         void Init()
@@ -136,6 +138,7 @@ namespace Muco
             styleSubHeader = new GUIStyle();
             styleBold = new GUIStyle();
             styleList = new GUIStyle();
+
             styleButtonNormal.fixedWidth = 200;
 
             styleButtonRed.normal.textColor = Color.red;
@@ -778,7 +781,36 @@ namespace Muco
                     
                 }
             }
-
+            GUILayout.Space(5);
+            GUILayout.Label("MultiLevel (Optional)", styleBold);
+            GUILayout.Space(5);
+            using (Horizontal)
+            {
+                using (Vertical)
+                {
+                    GUILayout.Label("MUCO MultiLevel Access Token.", styleList);
+                    GUILayout.Label("Try get MUCO MultiLevel Package", styleList);
+                }
+                GUILayout.FlexibleSpace();
+                using (Vertical)
+                {
+                    _multiLevelAccessToken = EditorGUILayout.TextField(_multiLevelAccessToken);
+                    string packageUrl = "com.phenomenalviborg.muco-multilevel@git+https://x-oauth-basic:" + _multiLevelAccessToken + "@github.com/phenomenalviborg/MUCO-UNITY-MultiLevel.git#package";
+                    if (IsPackageInstalledCached(packageUrl))
+                    {
+                        GUI.enabled = false;
+                        GUILayout.Label("OK", styleButtonGreen);
+                        GUI.enabled = true;
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("Install Package", styleButtonNormal))
+                        {
+                            AddPackage(packageUrl);
+                        }
+                    }
+                }
+            }
             GUILayout.Space(10);
             EditorGUILayout.EndScrollView();
         }
