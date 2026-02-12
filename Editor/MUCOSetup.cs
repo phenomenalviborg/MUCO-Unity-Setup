@@ -589,6 +589,35 @@ namespace Muco
                 }
             }
 
+            GUILayout.Space(20);
+            GUILayout.Label("Project Settings -> Adaptive Performance", styleSubHeader);
+            GUILayout.Space(5);
+
+            using (Horizontal)
+            {
+                using (Vertical)
+                {
+                    GUILayout.Label("Adaptive Performance Provider (Android)");
+                }
+                GUILayout.FlexibleSpace();
+                using (Vertical)
+                {
+                    if (IsAdaptivePerformanceEnabled())
+                    {
+                        GUI.enabled = false;
+                        GUILayout.Label("OK", styleButtonGreen);
+                        GUI.enabled = true;
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("Enable Android Provider", styleButtonNormal))
+                        {
+                            EnableAdaptivePerformance();
+                        }
+                    }
+                }
+            }
+
             GUI.enabled = true;
             GUILayout.Space(20);
             GUILayout.Label("Headset Build Check List", styleSubHeader);
@@ -1074,6 +1103,89 @@ namespace Muco
                 EditorGUIUtility.PingObject(picoConfig);
                 // Open the Inspector window to show the settings
                 EditorApplication.ExecuteMenuItem("Window/General/Inspector");
+            }
+        }
+
+        private bool IsAdaptivePerformanceEnabled()
+        {
+            var perBuildTargetType = Type.GetType(
+                "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget, Unity.AdaptivePerformance.Editor");
+            if (perBuildTargetType == null) return false;
+
+            var getSettingsMethod = perBuildTargetType.GetMethod(
+                "AdaptivePerformanceGeneralSettingsForBuildTarget", BindingFlags.Public | BindingFlags.Static);
+            if (getSettingsMethod == null) return false;
+
+            var generalSettings = getSettingsMethod.Invoke(null, new object[] { BuildTargetGroup.Android });
+            if (generalSettings == null) return false;
+
+            var managerProp = generalSettings.GetType().GetProperty("Manager");
+            if (managerProp == null) return false;
+
+            var manager = managerProp.GetValue(generalSettings);
+            if (manager == null) return false;
+
+            var loadersProp = manager.GetType().GetProperty("loaders");
+            if (loadersProp == null) return false;
+
+            var loaders = loadersProp.GetValue(manager) as System.Collections.IList;
+            return loaders != null && loaders.Count > 0;
+        }
+
+        private void EnableAdaptivePerformance()
+        {
+            var perBuildTargetType = Type.GetType(
+                "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget, Unity.AdaptivePerformance.Editor");
+            if (perBuildTargetType == null)
+            {
+                Debug.LogError("AdaptivePerformanceGeneralSettingsPerBuildTarget not found. Is the Adaptive Performance package installed?");
+                return;
+            }
+
+            var getSettingsMethod = perBuildTargetType.GetMethod(
+                "AdaptivePerformanceGeneralSettingsForBuildTarget", BindingFlags.Public | BindingFlags.Static);
+            var generalSettings = getSettingsMethod?.Invoke(null, new object[] { BuildTargetGroup.Android });
+            if (generalSettings == null)
+            {
+                Debug.LogError("No Adaptive Performance settings for Android. Open Project Settings > Adaptive Performance to initialize first.");
+                return;
+            }
+
+            var managerProp = generalSettings.GetType().GetProperty("Manager");
+            var manager = managerProp?.GetValue(generalSettings);
+            if (manager == null)
+            {
+                Debug.LogError("Adaptive Performance Manager not found for Android.");
+                return;
+            }
+
+            var metadataStoreType = Type.GetType(
+                "UnityEditor.AdaptivePerformance.Editor.Metadata.AdaptivePerformancePackageMetadataStore, Unity.AdaptivePerformance.Editor");
+            if (metadataStoreType == null)
+            {
+                Debug.LogError("AdaptivePerformancePackageMetadataStore not found.");
+                return;
+            }
+
+            var assignMethod = metadataStoreType.GetMethod("AssignLoader", BindingFlags.Public | BindingFlags.Static);
+            if (assignMethod == null)
+            {
+                Debug.LogError("AssignLoader method not found.");
+                return;
+            }
+
+            string loaderTypeName = "UnityEngine.AdaptivePerformance.Google.Android.GoogleAndroidProviderLoader";
+            bool success = (bool)assignMethod.Invoke(null, new object[] { manager, loaderTypeName, BuildTargetGroup.Android });
+
+            if (success)
+            {
+                Debug.Log("Android Adaptive Performance provider enabled successfully.");
+                EditorUtility.SetDirty(generalSettings as UnityEngine.Object);
+                AssetDatabase.SaveAssets();
+            }
+            else
+            {
+                Debug.LogError("Failed to assign Android Adaptive Performance loader.");
             }
         }
     }
