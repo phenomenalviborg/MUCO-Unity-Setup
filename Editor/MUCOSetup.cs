@@ -1106,10 +1106,25 @@ namespace Muco
             }
         }
 
+        // Resolves an Adaptive Performance type by its full name across all loaded assemblies.
+        // The editor types kept the same namespace but moved assemblies between AP versions:
+        // AP 1.x/2.x shipped them in "Unity.AdaptivePerformance.Editor", while AP 5.x (Unity 6)
+        // ships them in the built-in "UnityEditor.AdaptivePerformanceModule". Scanning by full
+        // name avoids hardcoding the assembly so this works regardless of installed version.
+        private static Type FindAdaptivePerformanceType(string fullName)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var type = assembly.GetType(fullName, false);
+                if (type != null) return type;
+            }
+            return null;
+        }
+
         private bool IsAdaptivePerformanceEnabled()
         {
-            var perBuildTargetType = Type.GetType(
-                "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget, Unity.AdaptivePerformance.Editor");
+            var perBuildTargetType = FindAdaptivePerformanceType(
+                "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget");
             if (perBuildTargetType == null) return false;
 
             var getSettingsMethod = perBuildTargetType.GetMethod(
@@ -1134,8 +1149,8 @@ namespace Muco
 
         private void EnableAdaptivePerformance()
         {
-            var perBuildTargetType = Type.GetType(
-                "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget, Unity.AdaptivePerformance.Editor");
+            var perBuildTargetType = FindAdaptivePerformanceType(
+                "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget");
             if (perBuildTargetType == null)
             {
                 Debug.LogError("AdaptivePerformanceGeneralSettingsPerBuildTarget not found. Is the Adaptive Performance package installed?");
@@ -1159,8 +1174,8 @@ namespace Muco
                 return;
             }
 
-            var metadataStoreType = Type.GetType(
-                "UnityEditor.AdaptivePerformance.Editor.Metadata.AdaptivePerformancePackageMetadataStore, Unity.AdaptivePerformance.Editor");
+            var metadataStoreType = FindAdaptivePerformanceType(
+                "UnityEditor.AdaptivePerformance.Editor.Metadata.AdaptivePerformancePackageMetadataStore");
             if (metadataStoreType == null)
             {
                 Debug.LogError("AdaptivePerformancePackageMetadataStore not found.");
