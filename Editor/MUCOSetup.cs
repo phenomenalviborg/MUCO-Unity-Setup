@@ -1163,103 +1163,144 @@ namespace Muco
             return keyField?.GetValue(null) as string ?? "com.unity.adaptiveperformance.loader_settings";
         }
 
-        // True once the Adaptive Performance general settings asset exists and is registered.
-        // This is the state the Project Settings > Adaptive Performance tab creates on first open.
+        // Returns the Adaptive Performance loader manager for Android, or null if Adaptive
+        // Performance has not been initialized yet. Walks the same object graph the Project
+        // Settings > Adaptive Performance UI builds: per-build-target settings (registered as an
+        // EditorBuildSettings config object) -> per-target general settings -> loader manager.
+        private object GetAndroidAdaptivePerformanceManager()
+        {
+            var key = GetAdaptivePerformanceSettingsKey();
+            if (!(EditorBuildSettings.TryGetConfigObject(key, out UnityEngine.Object perBuildTarget) && perBuildTarget != null))
+            {
+                return null;
+            }
+
+            var settingsForBuildTarget = perBuildTarget.GetType().GetMethod(
+                "SettingsForBuildTarget", new[] { typeof(BuildTargetGroup) });
+            var generalSettings = settingsForBuildTarget?.Invoke(perBuildTarget, new object[] { BuildTargetGroup.Android });
+            if (generalSettings == null) return null;
+
+            var managerProp = generalSettings.GetType().GetProperty("Manager");
+            return managerProp?.GetValue(generalSettings);
+        }
+
+        // True once Adaptive Performance is enabled for Android: the master toggle is on and the
+        // per-target general settings (with a loader manager) exist. This is the state the Project
+        // Settings > Adaptive Performance Android tab creates.
         private bool IsAdaptivePerformanceInitialized()
         {
             var key = GetAdaptivePerformanceSettingsKey();
-            return EditorBuildSettings.TryGetConfigObject(key, out UnityEngine.Object settings) && settings != null;
+            if (!(EditorBuildSettings.TryGetConfigObject(key, out UnityEngine.Object perBuildTarget) && perBuildTarget != null))
+            {
+                return false;
+            }
+
+            var enableProp = perBuildTarget.GetType().GetProperty("EnableAdaptivePerformance");
+            if (enableProp != null && enableProp.GetValue(perBuildTarget) is bool enabled && !enabled)
+            {
+                return false;
+            }
+
+            return GetAndroidAdaptivePerformanceManager() != null;
         }
 
-        // Creates and registers the Adaptive Performance general settings asset, mirroring what the
-        // Project Settings > Adaptive Performance tab does on first open. Required before a provider
-        // (e.g. the Android provider) can be assigned.
+        // Builds and registers the full Adaptive Performance object graph for Android, mirroring what
+        // the Project Settings > Adaptive Performance Android tab does: a per-build-target settings
+        // asset (registered as a config object), a per-target general settings sub-asset, and a loader
+        // manager sub-asset, with the master "Enable Adaptive Performance" toggle turned on. This is a
+        // prerequisite for assigning a provider.
         private void InitializeAdaptivePerformance()
         {
             var key = GetAdaptivePerformanceSettingsKey();
             var perBuildTargetType = FindAdaptivePerformanceType(
                 "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget");
-            if (perBuildTargetType == null)
+            var generalSettingsType = FindAdaptivePerformanceType(
+                "UnityEngine.AdaptivePerformance.AdaptivePerformanceGeneralSettings");
+            var managerType = FindAdaptivePerformanceType(
+                "UnityEngine.AdaptivePerformance.AdaptivePerformanceManagerSettings");
+            if (perBuildTargetType == null || generalSettingsType == null || managerType == null)
             {
-                Debug.LogError("AdaptivePerformanceGeneralSettingsPerBuildTarget not found. Is the Adaptive Performance package installed?");
+                Debug.LogError("Adaptive Performance types not found. Is the Adaptive Performance package installed?");
                 return;
             }
 
-            if (EditorBuildSettings.TryGetConfigObject(key, out UnityEngine.Object existing) && existing != null)
+            // 1. Per-build-target settings asset, registered as the EditorBuildSettings config object.
+            if (!(EditorBuildSettings.TryGetConfigObject(key, out UnityEngine.Object perBuildTarget) && perBuildTarget != null))
             {
-                return; // already initialized
+                var guids = AssetDatabase.FindAssets("t:" + perBuildTargetType.Name);
+                if (guids.Length > 0)
+                {
+                    perBuildTarget = AssetDatabase.LoadAssetAtPath(AssetDatabase.GUIDToAssetPath(guids[0]), perBuildTargetType);
+                }
+                if (perBuildTarget == null)
+                {
+                    perBuildTarget = ScriptableObject.CreateInstance(perBuildTargetType);
+                    AssetDatabase.CreateAsset(perBuildTarget, "Assets/AdaptivePerformanceGeneralSettings.asset");
+                }
+                EditorBuildSettings.AddConfigObject(key, perBuildTarget, true);
             }
 
-            // Reuse an existing asset in the project if one is present, otherwise create the default one.
-            UnityEngine.Object settings = null;
-            var guids = AssetDatabase.FindAssets("t:" + perBuildTargetType.Name);
-            if (guids.Length > 0)
+            // 2. Per-target general settings for Android, stored as a sub-asset.
+            var settingsForBuildTarget = perBuildTargetType.GetMethod(
+                "SettingsForBuildTarget", new[] { typeof(BuildTargetGroup) });
+            var setSettingsForBuildTarget = perBuildTargetType.GetMethod(
+                "SetSettingsForBuildTarget", new[] { typeof(BuildTargetGroup), generalSettingsType });
+            var generalSettings = settingsForBuildTarget?.Invoke(perBuildTarget, new object[] { BuildTargetGroup.Android }) as UnityEngine.Object;
+            if (generalSettings == null)
             {
-                var path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                settings = AssetDatabase.LoadAssetAtPath(path, perBuildTargetType);
+                generalSettings = ScriptableObject.CreateInstance(generalSettingsType);
+                generalSettings.name = "Adaptive Performance Settings - Android";
+                setSettingsForBuildTarget?.Invoke(perBuildTarget, new object[] { BuildTargetGroup.Android, generalSettings });
+                AssetDatabase.AddObjectToAsset(generalSettings, perBuildTarget);
             }
 
-            if (settings == null)
+            // 3. Loader manager that holds the providers, stored as a sub-asset.
+            var managerProp = generalSettingsType.GetProperty("Manager");
+            var manager = managerProp?.GetValue(generalSettings) as UnityEngine.Object;
+            if (manager == null)
             {
-                settings = ScriptableObject.CreateInstance(perBuildTargetType);
-                AssetDatabase.CreateAsset(settings, "Assets/AdaptivePerformanceGeneralSettings.asset");
+                manager = ScriptableObject.CreateInstance(managerType);
+                manager.name = "Adaptive Performance Manager - Android";
+                managerProp?.SetValue(generalSettings, manager);
+                AssetDatabase.AddObjectToAsset(manager, generalSettings);
             }
 
-            EditorBuildSettings.AddConfigObject(key, settings, true);
+            // 4. Turn on the master "Enable Adaptive Performance" toggle.
+            perBuildTargetType.GetProperty("EnableAdaptivePerformance")?.SetValue(perBuildTarget, true);
+
+            EditorUtility.SetDirty(perBuildTarget);
+            EditorUtility.SetDirty(generalSettings);
             AssetDatabase.SaveAssets();
-            Debug.Log("Adaptive Performance general settings initialized.");
+            Debug.Log("Adaptive Performance initialized for Android.");
         }
 
         private bool IsAdaptivePerformanceEnabled()
         {
-            var perBuildTargetType = FindAdaptivePerformanceType(
-                "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget");
-            if (perBuildTargetType == null) return false;
-
-            var getSettingsMethod = perBuildTargetType.GetMethod(
-                "AdaptivePerformanceGeneralSettingsForBuildTarget", BindingFlags.Public | BindingFlags.Static);
-            if (getSettingsMethod == null) return false;
-
-            var generalSettings = getSettingsMethod.Invoke(null, new object[] { BuildTargetGroup.Android });
-            if (generalSettings == null) return false;
-
-            var managerProp = generalSettings.GetType().GetProperty("Manager");
-            if (managerProp == null) return false;
-
-            var manager = managerProp.GetValue(generalSettings);
+            var manager = GetAndroidAdaptivePerformanceManager();
             if (manager == null) return false;
 
             var loadersProp = manager.GetType().GetProperty("loaders");
-            if (loadersProp == null) return false;
+            var loaders = loadersProp?.GetValue(manager) as System.Collections.IList;
+            if (loaders == null) return false;
 
-            var loaders = loadersProp.GetValue(manager) as System.Collections.IList;
-            return loaders != null && loaders.Count > 0;
+            var loaderType = FindAdaptivePerformanceType(
+                "UnityEngine.AdaptivePerformance.Google.Android.GoogleAndroidProviderLoader");
+            foreach (var loader in loaders)
+            {
+                if (loader != null && (loaderType == null || loaderType.IsInstanceOfType(loader)))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void EnableAdaptivePerformance()
         {
-            var perBuildTargetType = FindAdaptivePerformanceType(
-                "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget");
-            if (perBuildTargetType == null)
-            {
-                Debug.LogError("AdaptivePerformanceGeneralSettingsPerBuildTarget not found. Is the Adaptive Performance package installed?");
-                return;
-            }
-
-            var getSettingsMethod = perBuildTargetType.GetMethod(
-                "AdaptivePerformanceGeneralSettingsForBuildTarget", BindingFlags.Public | BindingFlags.Static);
-            var generalSettings = getSettingsMethod?.Invoke(null, new object[] { BuildTargetGroup.Android });
-            if (generalSettings == null)
-            {
-                Debug.LogError("No Adaptive Performance settings for Android. Open Project Settings > Adaptive Performance to initialize first.");
-                return;
-            }
-
-            var managerProp = generalSettings.GetType().GetProperty("Manager");
-            var manager = managerProp?.GetValue(generalSettings);
+            var manager = GetAndroidAdaptivePerformanceManager();
             if (manager == null)
             {
-                Debug.LogError("Adaptive Performance Manager not found for Android.");
+                Debug.LogError("No Adaptive Performance settings for Android. Run the \"Adaptive Performance\" enable step first.");
                 return;
             }
 
@@ -1284,7 +1325,7 @@ namespace Muco
             if (success)
             {
                 Debug.Log("Android Adaptive Performance provider enabled successfully.");
-                EditorUtility.SetDirty(generalSettings as UnityEngine.Object);
+                EditorUtility.SetDirty(manager as UnityEngine.Object);
                 AssetDatabase.SaveAssets();
             }
             else
