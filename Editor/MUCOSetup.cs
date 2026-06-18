@@ -1189,18 +1189,8 @@ namespace Muco
         // Settings > Adaptive Performance Android tab creates.
         private bool IsAdaptivePerformanceInitialized()
         {
-            var key = GetAdaptivePerformanceSettingsKey();
-            if (!(EditorBuildSettings.TryGetConfigObject(key, out UnityEngine.Object perBuildTarget) && perBuildTarget != null))
-            {
-                return false;
-            }
-
-            var enableProp = perBuildTarget.GetType().GetProperty("EnableAdaptivePerformance");
-            if (enableProp != null && enableProp.GetValue(perBuildTarget) is bool enabled && !enabled)
-            {
-                return false;
-            }
-
+            // The loader manager only exists once the per-build-target settings and per-target
+            // general settings have been created, so its presence is a sufficient signal.
             return GetAndroidAdaptivePerformanceManager() != null;
         }
 
@@ -1265,8 +1255,10 @@ namespace Muco
                 AssetDatabase.AddObjectToAsset(manager, generalSettings);
             }
 
-            // 4. Turn on the master "Enable Adaptive Performance" toggle.
-            perBuildTargetType.GetProperty("EnableAdaptivePerformance")?.SetValue(perBuildTarget, true);
+            // 4. Turn on the master "Enable Adaptive Performance" toggle. Its accessors are internal,
+            // so NonPublic binding is required to find the property.
+            perBuildTargetType.GetProperty("EnableAdaptivePerformance",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.SetValue(perBuildTarget, true);
 
             EditorUtility.SetDirty(perBuildTarget);
             EditorUtility.SetDirty(generalSettings);
@@ -1319,14 +1311,42 @@ namespace Muco
                 return;
             }
 
+            // AssignLoader creates the loader ScriptableObject asset, but it only links it into the
+            // manager by iterating the provider metadata registry (GetAllLoadersForBuildTarget), which
+            // is empty in a freshly-loaded/headless editor. So it reliably creates the asset but often
+            // fails to add it to the manager. Call it for the asset-creation side effect, then link the
+            // loader into the manager ourselves.
             string loaderTypeName = "UnityEngine.AdaptivePerformance.Google.Android.GoogleAndroidProviderLoader";
-            bool success = (bool)assignMethod.Invoke(null, new object[] { manager, loaderTypeName, BuildTargetGroup.Android });
+            assignMethod.Invoke(null, new object[] { manager, loaderTypeName, BuildTargetGroup.Android });
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
 
-            if (success)
+            // Re-fetch the manager (it survives the refresh) and link the loader asset by type.
+            manager = GetAndroidAdaptivePerformanceManager();
+            var loaderType = FindAdaptivePerformanceType(loaderTypeName);
+            var loaders = manager?.GetType().GetProperty("loaders")?.GetValue(manager) as System.Collections.IList;
+            if (loaders == null || loaderType == null)
+            {
+                Debug.LogError("Failed to access Adaptive Performance loader list.");
+                return;
+            }
+
+            foreach (var guid in AssetDatabase.FindAssets("t:" + loaderType.Name))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var loaderObj = AssetDatabase.LoadAssetAtPath(path, loaderType);
+                if (loaderObj != null && !loaders.Contains(loaderObj))
+                {
+                    loaders.Add(loaderObj);
+                }
+            }
+
+            EditorUtility.SetDirty(manager as UnityEngine.Object);
+            AssetDatabase.SaveAssets();
+
+            if (loaders.Count > 0)
             {
                 Debug.Log("Android Adaptive Performance provider enabled successfully.");
-                EditorUtility.SetDirty(manager as UnityEngine.Object);
-                AssetDatabase.SaveAssets();
             }
             else
             {
