@@ -593,6 +593,33 @@ namespace Muco
             GUILayout.Label("Project Settings -> Adaptive Performance", styleSubHeader);
             GUILayout.Space(5);
 
+            bool adaptivePerformanceInitialized = IsAdaptivePerformanceInitialized();
+
+            using (Horizontal)
+            {
+                using (Vertical)
+                {
+                    GUILayout.Label("Adaptive Performance");
+                }
+                GUILayout.FlexibleSpace();
+                using (Vertical)
+                {
+                    if (adaptivePerformanceInitialized)
+                    {
+                        GUI.enabled = false;
+                        GUILayout.Label("OK", styleButtonGreen);
+                        GUI.enabled = true;
+                    }
+                    else
+                    {
+                        if (GUILayout.Button("Enable", styleButtonNormal))
+                        {
+                            InitializeAdaptivePerformance();
+                        }
+                    }
+                }
+            }
+
             using (Horizontal)
             {
                 using (Vertical)
@@ -610,10 +637,14 @@ namespace Muco
                     }
                     else
                     {
+                        // The provider can only be assigned once the general settings asset
+                        // exists, so keep this step disabled until the step above is done.
+                        GUI.enabled = adaptivePerformanceInitialized;
                         if (GUILayout.Button("Enable Android Provider", styleButtonNormal))
                         {
                             EnableAdaptivePerformance();
                         }
+                        GUI.enabled = true;
                     }
                 }
             }
@@ -1119,6 +1150,64 @@ namespace Muco
                 if (type != null) return type;
             }
             return null;
+        }
+
+        // The EditorBuildSettings key under which the Adaptive Performance general settings asset
+        // is registered. Read from the public static field so it stays correct across versions;
+        // falls back to the known constant if the field can't be resolved.
+        private static string GetAdaptivePerformanceSettingsKey()
+        {
+            var generalSettingsType = FindAdaptivePerformanceType(
+                "UnityEngine.AdaptivePerformance.AdaptivePerformanceGeneralSettings");
+            var keyField = generalSettingsType?.GetField("k_SettingsKey", BindingFlags.Public | BindingFlags.Static);
+            return keyField?.GetValue(null) as string ?? "com.unity.adaptiveperformance.loader_settings";
+        }
+
+        // True once the Adaptive Performance general settings asset exists and is registered.
+        // This is the state the Project Settings > Adaptive Performance tab creates on first open.
+        private bool IsAdaptivePerformanceInitialized()
+        {
+            var key = GetAdaptivePerformanceSettingsKey();
+            return EditorBuildSettings.TryGetConfigObject(key, out UnityEngine.Object settings) && settings != null;
+        }
+
+        // Creates and registers the Adaptive Performance general settings asset, mirroring what the
+        // Project Settings > Adaptive Performance tab does on first open. Required before a provider
+        // (e.g. the Android provider) can be assigned.
+        private void InitializeAdaptivePerformance()
+        {
+            var key = GetAdaptivePerformanceSettingsKey();
+            var perBuildTargetType = FindAdaptivePerformanceType(
+                "UnityEditor.AdaptivePerformance.Editor.AdaptivePerformanceGeneralSettingsPerBuildTarget");
+            if (perBuildTargetType == null)
+            {
+                Debug.LogError("AdaptivePerformanceGeneralSettingsPerBuildTarget not found. Is the Adaptive Performance package installed?");
+                return;
+            }
+
+            if (EditorBuildSettings.TryGetConfigObject(key, out UnityEngine.Object existing) && existing != null)
+            {
+                return; // already initialized
+            }
+
+            // Reuse an existing asset in the project if one is present, otherwise create the default one.
+            UnityEngine.Object settings = null;
+            var guids = AssetDatabase.FindAssets("t:" + perBuildTargetType.Name);
+            if (guids.Length > 0)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guids[0]);
+                settings = AssetDatabase.LoadAssetAtPath(path, perBuildTargetType);
+            }
+
+            if (settings == null)
+            {
+                settings = ScriptableObject.CreateInstance(perBuildTargetType);
+                AssetDatabase.CreateAsset(settings, "Assets/AdaptivePerformanceGeneralSettings.asset");
+            }
+
+            EditorBuildSettings.AddConfigObject(key, settings, true);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Adaptive Performance general settings initialized.");
         }
 
         private bool IsAdaptivePerformanceEnabled()
